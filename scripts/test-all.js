@@ -28,6 +28,7 @@ const testFiles = [
   'packages/merchant-sdk/src/__tests__/checkout-success-lifecycle.test.js',
   'apps/checkout-portal/src/__tests__/checkout-portal.test.js',
   'apps/checkout-portal/src/__tests__/checkout-xss.test.js',
+  'apps/checkout-portal/src/__tests__/cards-scan-pay-native.test.js',
   'apps/coin-wallet-store/src/__tests__/coin-wallet-store.test.js',
   'apps/merchant-admin/src/__tests__/merchant-admin.test.js',
   'apps/payment-help/src/__tests__/payment-help.test.js',

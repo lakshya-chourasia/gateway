@@ -14,6 +14,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- QRCode.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- jsQR Barcode/QR Scanning Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Google Identity Services -->
@@ -81,6 +83,20 @@
     .btn-press:active {
       transform: scale(0.97);
     }
+    @keyframes scanline {
+      0% { top: 6%; opacity: 0.8; }
+      50% { top: 90%; opacity: 1; }
+      100% { top: 6%; opacity: 0.8; }
+    }
+    .scan-laser {
+      animation: scanline 2.2s ease-in-out infinite;
+    }
+    .virtual-card-shimmer {
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 100%);
+    }
+    .emv-chip {
+      background: linear-gradient(135deg, #d4af37 0%, #aa7c11 50%, #f3e5ab 100%);
+    }
   </style>
 </head>
 <body class="bg-black text-white min-h-screen flex flex-col items-center justify-start antialiased selection:bg-white selection:text-black">
@@ -114,8 +130,12 @@
         <button onclick="openFirebaseConfigModal()" title="Cloud Database & Firebase Settings" class="w-9 h-9 rounded-full bg-[#121215] hairline-border flex items-center justify-center text-neutral-400 hover:text-white transition btn-press">
           <i data-lucide="cloud" class="w-4 h-4"></i>
         </button>
-        <button onclick="launchPaymentModal()" title="Scan & Pay QR" class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center font-bold transition btn-press shadow">
-          <i data-lucide="qr-code" class="w-4 h-4 text-black"></i>
+        <button onclick="openScannerModal()" title="Scan Any UPI QR with Camera" class="px-3 h-9 rounded-full bg-white text-black flex items-center justify-center font-black text-xs font-mono tracking-wider transition btn-press shadow gap-1.5">
+          <i data-lucide="scan-line" class="w-4 h-4 text-black stroke-[2.5]"></i>
+          <span>SCAN</span>
+        </button>
+        <button onclick="launchPaymentModal()" title="Show My Pay QR" class="w-9 h-9 rounded-full bg-[#141417] hairline-border flex items-center justify-center text-neutral-300 hover:text-white transition btn-press">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
         </button>
       </div>
     </header>
@@ -148,6 +168,28 @@
           </button>
         </div>
 
+        <!-- Quick Action Bar: Scan to Pay & Saved Cards -->
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="openScannerModal()" class="py-2.5 px-3 rounded-2xl bg-[#0c0c0e] hairline-border hover:border-neutral-600 transition flex items-center space-x-2.5 btn-press">
+            <div class="w-7 h-7 rounded-xl bg-white text-black flex items-center justify-center shrink-0">
+              <i data-lucide="scan" class="w-4 h-4 stroke-[2.5]"></i>
+            </div>
+            <div class="text-left">
+              <div class="text-xs font-black text-white tracking-tight">SCAN TO PAY</div>
+              <div class="text-[9px] font-mono text-neutral-500">Camera &amp; UPI QR</div>
+            </div>
+          </button>
+
+          <button onclick="switchMainScreen('cards')" class="py-2.5 px-3 rounded-2xl bg-[#0c0c0e] hairline-border hover:border-neutral-600 transition flex items-center space-x-2.5 btn-press">
+            <div class="w-7 h-7 rounded-xl bg-[#18181c] hairline-border flex items-center justify-center text-white shrink-0">
+              <i data-lucide="credit-card" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="text-left">
+              <div class="text-xs font-black text-white tracking-tight">SAVED CARDS</div>
+              <div class="text-[9px] font-mono text-neutral-500">1-Tap Card Pay</div>
+            </div>
+          </button>
+        </div>
 
         <!-- HERO AMOUNT CARD (BOLD OVERSIZED FINTECH TYPOGRAPHY) -->
         <div class="bg-[#0c0c0e] hairline-border rounded-3xl p-6 text-center space-y-3 relative overflow-hidden">
@@ -187,7 +229,7 @@
 
         <!-- PRIMARY CALL-TO-ACTION (HEAVY BOLD PAYMENT APP BUTTON) -->
         <div class="space-y-3 pt-1">
-          <button onclick="launchPaymentModal()" class="w-full h-14 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-wider hover:bg-neutral-200 transition shadow-lg flex items-center justify-center gap-2 btn-press">
+          <button onclick="launchNativePaymentModal()" class="w-full h-14 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-wider hover:bg-neutral-200 transition shadow-lg flex items-center justify-center gap-2 btn-press">
             <span>PROCEED TO PAY ₹<span id="btnAmountLabel">500.00</span></span>
             <i data-lucide="arrow-right" class="w-4 h-4 text-black stroke-[3]"></i>
           </button>
@@ -242,13 +284,122 @@
 
       </section>
 
+
+      <!-- ================= SCREEN 3: SAVED CARDS & FINTECH VAULT ================= -->
+      <section id="screenCards" class="space-y-4 hidden">
+        <!-- Header & Add Button -->
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 font-bold">FINTECH CARD VAULT</div>
+            <h2 class="text-base font-black text-white tracking-tight">CRED-STYLE CARDS</h2>
+          </div>
+          <button onclick="openAddCardModal()" class="px-3.5 py-1.5 rounded-xl bg-white text-black font-extrabold text-[11px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition flex items-center space-x-1.5 btn-press shadow">
+            <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[3]"></i>
+            <span>ADD CARD</span>
+          </button>
+        </div>
+
+        <!-- Virtual Featured Card Display (CRED-Style Luxury Metal Card) -->
+        <div id="featuredCardContainer" class="relative w-full aspect-[1.586/1] rounded-3xl p-5 overflow-hidden hairline-border shadow-2xl flex flex-col justify-between"
+             style="background: radial-gradient(circle at 85% 15%, #2c2d33 0%, #111114 60%, #060608 100%);">
+          <!-- Metallic Gloss Sheen Overlay -->
+          <div class="absolute inset-0 virtual-card-shimmer pointer-events-none"></div>
+
+          <!-- Card Top Row: Bank Name, Chip & Contactless -->
+          <div class="flex items-center justify-between relative z-10">
+            <div class="flex items-center space-x-2">
+              <span id="featuredCardBank" class="text-xs font-black font-sans uppercase tracking-widest text-neutral-200">HDFC BANK</span>
+              <span id="featuredCardTypeBadge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-neutral-300">PLATINUM</span>
+            </div>
+            <!-- Contactless Wave Icon -->
+            <svg class="w-5 h-5 text-neutral-400 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8.5 16.5a5 5 0 0 1 0-7"/>
+              <path d="M12 19a8.5 8.5 0 0 1 0-12"/>
+              <path d="M15.5 21.5a12 12 0 0 1 0-17"/>
+            </svg>
+          </div>
+
+          <!-- Card Middle Row: EMV Chip & Monogram -->
+          <div class="flex items-center justify-between my-auto relative z-10">
+            <!-- Brushed Gold EMV Chip Design -->
+            <div class="w-10 h-7 rounded-md emv-chip relative overflow-hidden shadow-inner border border-amber-300/40 flex items-center justify-center">
+              <div class="w-full h-[1px] bg-amber-900/40 absolute top-2"></div>
+              <div class="w-full h-[1px] bg-amber-900/40 absolute bottom-2"></div>
+              <div class="h-full w-[1px] bg-amber-900/40 absolute left-3"></div>
+              <div class="h-full w-[1px] bg-amber-900/40 absolute right-3"></div>
+              <div class="w-3.5 h-3 rounded-sm border border-amber-900/40"></div>
+            </div>
+            <span class="text-[9px] font-mono tracking-widest text-neutral-500 uppercase font-bold">SECURE CHIP</span>
+          </div>
+
+          <!-- Card Bottom: Number, Expiry, Name & Network Logo -->
+          <div class="space-y-2 relative z-10">
+            <div id="featuredCardNumber" class="text-lg sm:text-xl font-mono font-bold tracking-[0.18em] text-white drop-shadow">
+              •••• •••• •••• 4242
+            </div>
+
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-[8px] font-mono uppercase text-neutral-500 tracking-wider">CARDHOLDER</div>
+                <div id="featuredCardHolder" class="text-xs font-extrabold uppercase tracking-wide text-neutral-200 truncate max-w-[170px]">
+                  PAYONE MEMBER
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div class="text-[7px] font-mono uppercase text-neutral-500 tracking-wider">EXPIRES</div>
+                <div id="featuredCardExpiry" class="text-xs font-mono font-bold text-neutral-200">12/28</div>
+              </div>
+
+              <!-- Network Logo Container -->
+              <div id="featuredCardNetworkBadge" class="flex items-center justify-end">
+                <span class="text-sm font-black italic tracking-wider text-white font-serif">VISA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saved Cards List -->
+        <div class="bg-[#0c0c0e] hairline-border rounded-3xl p-4 space-y-3">
+          <div class="flex items-center justify-between pb-2 hairline-border-b">
+            <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400 font-bold">SAVED CARDS</span>
+            <span id="savedCardsCount" class="text-[10px] font-mono text-neutral-500">0 CARDS</span>
+          </div>
+
+          <!-- Dynamic Cards Container -->
+          <div id="savedCardsList" class="space-y-2.5">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Production Card Security & Compliance Standards -->
+        <div class="p-3.5 bg-[#0c0c0e] hairline-border rounded-2xl space-y-2.5">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-300 font-bold">RBI TOKENIZATION &amp; PCI-DSS 4.0</span>
+          </div>
+          <p class="text-[10px] text-neutral-400 font-mono leading-relaxed">
+            Card credentials are tokenized in compliance with Reserve Bank of India (RBI) Card-on-File mandates and encrypted at rest via AES-256 vault. Card CVV is never stored.
+          </p>
+          <button onclick="openAddCardModal()" class="w-full py-2.5 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-white font-mono text-xs font-bold transition flex items-center justify-center gap-1.5 btn-press">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>ADD NEW CREDIT / DEBIT CARD</span>
+          </button>
+        </div>
+      </section>
+
     </main>
 
     <!-- FIXED MOBILE BOTTOM NAVIGATION -->
-    <nav class="sticky bottom-0 z-40 bg-black/95 backdrop-blur-2xl hairline-border-t px-6 py-2.5 flex items-center justify-around">
+    <nav class="sticky bottom-0 z-40 bg-black/95 backdrop-blur-2xl hairline-border-t px-4 py-2.5 flex items-center justify-around">
       <button onclick="switchMainScreen('pay')" id="navDockPay" class="flex flex-col items-center gap-1 text-white btn-press">
         <i data-lucide="zap" class="w-5 h-5 stroke-[2.5]"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">PAY</span>
+      </button>
+
+      <button onclick="switchMainScreen('cards')" id="navDockCards" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+        <i data-lucide="credit-card" class="w-5 h-5"></i>
+        <span class="text-[9px] font-bold font-mono tracking-wider">CARDS</span>
       </button>
 
       <button onclick="switchMainScreen('ledger')" id="navDockLedger" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
@@ -256,12 +407,12 @@
         <span class="text-[9px] font-bold font-mono tracking-wider">ACTIVITY</span>
       </button>
 
-      <button onclick="openAuthModal()" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="openAuthModal()" id="navDockAccount" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
         <i data-lucide="user" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">ACCOUNT</span>
       </button>
 
-      <button onclick="openFirebaseConfigModal()" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="openFirebaseConfigModal()" id="navDockCloud" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
         <i data-lucide="database" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">CLOUD</span>
       </button>
@@ -332,6 +483,384 @@
       <!-- Micro Note -->
       <div class="text-[10px] font-mono text-neutral-600 text-center pt-1">
         Payments settle directly to this VPA with zero platform intermediary.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= CAMERA QR SCANNER MODAL (SCAN TO PAY) ================= -->
+  <div id="scannerModal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex flex-col justify-between hidden">
+    <!-- Scanner Top Bar -->
+    <div class="h-16 px-5 flex items-center justify-between bg-black/80 hairline-border-b z-20">
+      <button onclick="closeScannerModal()" class="w-9 h-9 rounded-full bg-[#141417] hairline-border flex items-center justify-center text-neutral-400 hover:text-white transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="text-center">
+        <div class="text-xs font-black tracking-widest uppercase text-white font-sans">SCAN TO PAY</div>
+        <div class="text-[9px] font-mono text-neutral-400">POINT CAMERA AT ANY UPI QR</div>
+      </div>
+      <button id="torchBtn" onclick="toggleScannerTorch()" class="w-9 h-9 rounded-full bg-[#141417] hairline-border flex items-center justify-center text-neutral-400 hover:text-white transition">
+        <i data-lucide="zap" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Scanner Viewfinder Box -->
+    <div class="flex-1 flex flex-col items-center justify-center relative p-6 overflow-hidden">
+      <!-- Camera Video Element -->
+      <video id="scannerVideo" playsinline autoplay muted class="absolute inset-0 w-full h-full object-cover"></video>
+      <canvas id="scannerCanvas" class="hidden"></canvas>
+
+      <!-- Shaded Mask with Viewfinder -->
+      <div class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-3xl border-2 border-white/60 shadow-2xl flex items-center justify-center overflow-hidden z-10 backdrop-contrast-125">
+        <!-- Corner Brackets -->
+        <div class="absolute top-2 left-2 w-5 h-5 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+        <div class="absolute top-2 right-2 w-5 h-5 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+        <div class="absolute bottom-2 left-2 w-5 h-5 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+        <div class="absolute bottom-2 right-2 w-5 h-5 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+
+        <!-- Sweeping Neon Laser Bar -->
+        <div class="scan-laser absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_#ffffff]"></div>
+
+        <span class="text-[10px] font-mono font-bold tracking-widest uppercase text-white/70 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md">
+          ALIGN QR CODE
+        </span>
+      </div>
+
+      <!-- Scanner Status Overlay -->
+      <div id="scannerFeedback" class="mt-6 z-10 px-4 py-2 rounded-xl bg-black/80 hairline-border text-center text-xs font-mono text-neutral-300">
+        Camera active. Align any UPI QR to scan.
+      </div>
+    </div>
+
+    <!-- Scanner Bottom Toolbar -->
+    <div class="p-6 bg-black/90 hairline-border-t space-y-3 z-20">
+      <div class="flex items-center justify-center gap-3">
+        <!-- Upload Photo from Gallery -->
+        <label class="flex-1 py-3 px-4 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-white font-mono text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer btn-press">
+          <i data-lucide="image" class="w-4 h-4 text-white"></i>
+          <span>UPLOAD QR IMAGE</span>
+          <input type="file" id="qrFileInput" accept="image/*" class="hidden" onchange="handleQrFileUpload(event)">
+        </label>
+
+        <!-- Switch Camera (Front/Back) -->
+        <button onclick="switchScannerCamera()" class="p-3 rounded-xl bg-[#141417] hairline-border text-neutral-300 hover:text-white transition btn-press" title="Switch Camera">
+          <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="text-[10px] font-mono text-neutral-500 text-center">
+        Zero redirect • Parses BharatPe, Paytm, PhonePe &amp; GPay QRs
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= BOTTOM SHEET: ADD NEW CARD MODAL ================= -->
+  <div id="addCardModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <button onclick="closeAddCardModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div class="pt-1">
+        <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 block font-bold">CARD VAULT</span>
+        <h3 class="text-base font-black text-white tracking-tight mt-0.5">ADD PAYMENT CARD</h3>
+        <p class="text-xs text-neutral-400 mt-1">Debit or credit card for instant 1-tap checkout</p>
+      </div>
+
+      <!-- Live Interactive Card Preview in Modal -->
+      <div class="relative w-full aspect-[1.586/1] rounded-2xl p-4 overflow-hidden hairline-border shadow-lg flex flex-col justify-between"
+           style="background: radial-gradient(circle at 85% 15%, #25262c 0%, #0d0d10 70%, #060608 100%);">
+        <div class="flex items-center justify-between">
+          <span id="previewCardBank" class="text-xs font-black font-sans uppercase tracking-widest text-neutral-300">HDFC BANK</span>
+          <span id="previewCardNetwork" class="text-xs font-black italic tracking-wider text-white">VISA</span>
+        </div>
+
+        <div class="w-8 h-5 rounded emv-chip my-auto border border-amber-300/40"></div>
+
+        <div class="space-y-1.5">
+          <div id="previewCardNumber" class="text-base font-mono font-bold tracking-[0.16em] text-white">
+            •••• •••• •••• ••••
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span id="previewCardHolder" class="text-[10px] font-extrabold uppercase tracking-wide text-neutral-300 truncate max-w-[160px]">CARDHOLDER NAME</span>
+            <span id="previewCardExpiry" class="text-[10px] font-mono text-neutral-300 font-bold">MM/YY</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Input Form -->
+      <form onsubmit="event.preventDefault(); submitAddCard();" class="space-y-3 pt-1">
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1">CARD NUMBER</label>
+          <div class="relative">
+            <input type="text" id="inputCardNumber" maxlength="19" placeholder="4532 0123 4567 8910"
+              class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none tracking-wider"
+              oninput="handleCardNumberInput(this)">
+            <span id="cardBrandIcon" class="absolute right-3 top-2.5 text-[11px] font-bold font-mono text-neutral-400">CARD</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1">CARDHOLDER NAME</label>
+          <input type="text" id="inputCardHolder" placeholder="e.g. MOHIT SHARMA"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none uppercase"
+            oninput="handleCardHolderInput(this)">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1">EXPIRY (MM/YY)</label>
+            <input type="text" id="inputCardExpiry" maxlength="5" placeholder="MM/YY"
+              class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none"
+              oninput="handleCardExpiryInput(this)">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1">CVV / CVC</label>
+            <input type="password" id="inputCardCvv" maxlength="4" placeholder="•••"
+              class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none tracking-widest">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1">BANK ISSUER</label>
+          <select id="inputCardBank" class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none" onchange="handleCardBankChange(this)">
+            <option value="HDFC Bank">HDFC Bank</option>
+            <option value="ICICI Bank">ICICI Bank</option>
+            <option value="State Bank of India">State Bank of India</option>
+            <option value="Axis Bank">Axis Bank</option>
+            <option value="Kotak Bank">Kotak Bank</option>
+            <option value="RuPay National">RuPay National</option>
+            <option value="Standard Chartered">Standard Chartered</option>
+            <option value="Other Bank">Other Commercial Bank</option>
+          </select>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider font-sans hover:bg-neutral-200 transition shadow btn-press mt-2">
+          SAVE CARD SECURELY
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ================= BOTTOM SHEET: NATIVE PAYMENT HUB MODAL ================= -->
+  <div id="nativePaymentModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <button onclick="closeNativePaymentModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Amount & Recipient Summary -->
+      <div class="text-center pt-1 pb-1">
+        <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 block font-bold">NATIVE PAYMENT CHECKOUT</span>
+        <div class="text-3xl font-black font-sans text-white mt-0.5">₹<span id="nativePayAmount">500.00</span></div>
+        <div class="text-[11px] text-neutral-400 font-mono mt-0.5">To: <span id="nativePayPayee" class="text-white font-bold">—</span></div>
+      </div>
+
+      <!-- Payment Method Choices -->
+      <div class="space-y-3">
+        
+        <!-- OPTION 1: NATIVE CARD PAYMENT -->
+        <div class="bg-[#121215] hairline-border rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center shrink-0">
+                <i data-lucide="credit-card" class="w-4 h-4 stroke-[2.5]"></i>
+              </div>
+              <div>
+                <div class="text-xs font-black text-white">PAY VIA CARD</div>
+                <div class="text-[9px] font-mono text-neutral-400">Debit / Credit • 3D Secure OTP</div>
+              </div>
+            </div>
+            <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white font-bold">NATIVE</span>
+          </div>
+
+          <!-- Card Selector Dropdown -->
+          <div id="nativeCardPickerSection" class="space-y-2">
+            <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold">SELECT CARD</label>
+            <select id="nativeCardSelect" class="w-full bg-black hairline-border text-white text-xs font-mono p-2.5 rounded-xl outline-none" onchange="updateNativeCardDisplay(this)">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+
+          <div class="flex space-x-2">
+            <input type="password" id="nativeCardCvv" maxlength="4" placeholder="CVV"
+              class="w-24 bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none text-center tracking-widest">
+            <button onclick="startNativeCardPayment()" class="flex-1 py-2.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider font-sans hover:bg-neutral-200 transition btn-press shadow">
+              PAY WITH CARD
+            </button>
+          </div>
+        </div>
+
+        <!-- OPTION 2: REAL NATIVE UPI INTENT APPS -->
+        <div class="bg-[#121215] hairline-border rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shrink-0 shadow">
+                <i data-lucide="smartphone" class="w-4 h-4 text-black stroke-[2.5]"></i>
+              </div>
+              <div>
+                <div class="text-xs font-black text-white">OPEN INSTALLED UPI APP</div>
+                <div class="text-[9px] font-mono text-neutral-400">Direct Native Intent Launch • Zero Merchant Fee</div>
+              </div>
+            </div>
+            <span class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">LIVE</span>
+          </div>
+
+          <!-- Primary Universal Intent Launch -->
+          <button onclick="triggerUniversalUpiIntent()" class="w-full py-3 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider font-sans hover:bg-neutral-200 transition btn-press shadow flex items-center justify-center gap-2">
+            <i data-lucide="external-link" class="w-4 h-4 text-black stroke-[2.5]"></i>
+            <span>OPEN DEFAULT UPI APP (INTENT)</span>
+          </button>
+
+          <!-- Specific Installed Apps Grid -->
+          <div class="grid grid-cols-3 gap-2 pt-1">
+            <button onclick="triggerAppIntent('gpay')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>Google Pay</span>
+              <span class="text-[8px] text-neutral-500">tez://</span>
+            </button>
+            <button onclick="triggerAppIntent('phonepe')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>PhonePe</span>
+              <span class="text-[8px] text-neutral-500">phonepe://</span>
+            </button>
+            <button onclick="triggerAppIntent('paytm')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>Paytm</span>
+              <span class="text-[8px] text-neutral-500">paytmmp://</span>
+            </button>
+            <button onclick="triggerAppIntent('bhim')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>BHIM</span>
+              <span class="text-[8px] text-neutral-500">bhim://</span>
+            </button>
+            <button onclick="triggerAppIntent('cred')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>CRED</span>
+              <span class="text-[8px] text-neutral-500">credpay://</span>
+            </button>
+            <button onclick="triggerAppIntent('mobikwik')" class="py-2.5 px-2 rounded-xl bg-black hairline-border hover:border-neutral-500 text-white font-bold text-xs font-mono transition flex flex-col items-center gap-0.5 btn-press">
+              <span>MobiKwik</span>
+              <span class="text-[8px] text-neutral-500">mobikwik://</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OPTION 3: BANK UTR CONFIRMATION -->
+        <div class="bg-[#121215] hairline-border rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="receipt" class="w-4 h-4 text-neutral-400"></i>
+              <span class="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold">CONFIRM 12-DIGIT BANK UTR</span>
+            </div>
+            <span class="text-[9px] font-mono text-neutral-500">FROM BANK SMS</span>
+          </div>
+          <div class="flex space-x-2">
+            <input type="text" id="nativeBankUtrInput" maxlength="12" placeholder="e.g. 412356789012"
+              class="flex-1 bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none">
+            <button onclick="confirmNativePaymentWithUtr()" class="px-4 py-2.5 rounded-xl bg-white text-black font-extrabold text-xs font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press">
+              CONFIRM
+            </button>
+          </div>
+        </div>
+
+        <!-- OPTION 4: SHOW QR CODE -->
+        <button onclick="closeNativePaymentModal(); launchPaymentModal();" class="w-full py-3 rounded-2xl bg-[#121215] hairline-border hover:border-neutral-500 text-neutral-300 text-xs font-mono transition flex items-center justify-center gap-2 btn-press">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>SHOW COUNTER SCAN QR CODE</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= BOTTOM SHEET: 3D-SECURE BANK OTP MODAL ================= -->
+  <div id="cardOtpModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <button onclick="closeCardOtpModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Bank Security Header -->
+      <div class="text-center pt-1">
+        <div class="w-12 h-12 rounded-2xl bg-white text-black mx-auto flex items-center justify-center font-black text-base mb-2 shadow">
+          <i data-lucide="shield-check" class="w-6 h-6 text-black stroke-[2.5]"></i>
+        </div>
+        <span id="otpBankTitle" class="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-400 block font-bold">HDFC BANK 3D-SECURE 2.0</span>
+        <h3 class="text-lg font-black text-white tracking-tight mt-0.5">VERIFY TRANSACTION</h3>
+        <p class="text-xs text-neutral-400 mt-1">Authorizing ₹<span id="otpAmountDisplay">500.00</span> on card <span id="otpCardMaskDisplay" class="font-mono text-white">•••• 4242</span></p>
+      </div>
+
+      <!-- Masked Mobile Notice -->
+      <div class="p-3 rounded-xl bg-black hairline-border text-center space-y-1">
+        <div class="text-[10px] font-mono text-neutral-500 uppercase">ONE-TIME PASSWORD (OTP) SENT BY BANK TO</div>
+        <div class="text-xs font-mono font-bold text-white">+91 ••••• ••810</div>
+      </div>
+
+      <!-- OTP Input Area -->
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 font-bold mb-1 text-center">ENTER 6-DIGIT BANK OTP</label>
+          <input type="text" id="bankOtpInput" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••"
+            class="w-full bg-black hairline-border focus:border-white text-white text-2xl font-mono font-black text-center py-3 rounded-xl tracking-[0.35em] outline-none">
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] font-mono text-neutral-500 px-1">
+          <span>Resend OTP in <strong id="otpCountdown" class="text-white">30s</strong></span>
+          <button onclick="resendBankOtp()" class="text-neutral-400 hover:text-white underline">Resend OTP</button>
+        </div>
+
+        <button id="submitOtpBtn" onclick="submitBankOtp()" class="w-full py-3.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider font-sans hover:bg-neutral-200 transition shadow btn-press">
+          AUTHORIZE PAYMENT
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= BOTTOM SHEET: PAYMENT SUCCESS CELEBRATION ================= -->
+  <div id="paymentSuccessModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 text-center animate-in zoom-in-95 duration-200">
+      
+      <!-- White Success Icon -->
+      <div class="w-16 h-16 rounded-3xl bg-white text-black mx-auto flex items-center justify-center font-black text-2xl shadow-2xl">
+        <i data-lucide="check" class="w-9 h-9 text-black stroke-[3]"></i>
+      </div>
+
+      <div>
+        <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 block font-bold">TRANSACTION SUCCESSFUL</span>
+        <div class="text-3xl font-black font-sans text-white mt-1">₹<span id="successModalAmount">500.00</span></div>
+        <p class="text-xs text-neutral-400 mt-1">Paid to <strong id="successModalPayee" class="text-white">Payee</strong></p>
+      </div>
+
+      <div class="bg-black hairline-border rounded-2xl p-3.5 space-y-2 text-left text-xs font-mono">
+        <div class="flex justify-between">
+          <span class="text-neutral-500">PAYMENT METHOD</span>
+          <span id="successModalMethod" class="text-white font-bold">CARD (VISA)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-neutral-500">REF / UTR</span>
+          <span id="successModalRef" class="text-white font-bold">AUTH-839102</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-neutral-500">TIME</span>
+          <span id="successModalTime" class="text-neutral-300">Just now</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-neutral-500">STATUS</span>
+          <span class="text-white font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            <span>SETTLED</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button onclick="closeSuccessModalAndGoToLedger()" class="w-full py-3.5 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider font-sans hover:bg-neutral-200 transition shadow btn-press">
+          VIEW IN ACTIVITY LEDGER
+        </button>
+        <button onclick="closeSuccessModal()" class="w-full py-2.5 rounded-xl bg-[#141417] hairline-border text-neutral-400 hover:text-white text-xs font-mono font-bold transition btn-press">
+          DONE
+        </button>
       </div>
     </div>
   </div>
@@ -749,6 +1278,17 @@
         loadLocalRecords();
         renderLedger();
       });
+
+      const cardsCol = collection(db, 'artifacts', appId, 'users', user.uid, 'cards');
+      onSnapshot(cardsCol, (snapshot) => {
+        const firestoreCards = [];
+        snapshot.forEach(docSnap => {
+          firestoreCards.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        if (firestoreCards.length > 0 && typeof window.syncFirestoreCards === 'function') {
+          window.syncFirestoreCards(firestoreCards);
+        }
+      }, () => {});
     }
 
     function showAuthAlert(msg) {
@@ -933,6 +1473,28 @@
       showToast("Transaction removed.");
     };
 
+    window.persistCardToFirestore = async function(card) {
+      if (db && currentUser && card && card.id) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'cards', card.id);
+          await setDoc(ref, {
+            ...card,
+            userId: currentUser.uid,
+            savedAt: new Date().toISOString()
+          });
+        } catch (e) {}
+      }
+    };
+
+    window.deleteCardFromFirestore = async function(cardId) {
+      if (db && currentUser && cardId) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'cards', cardId);
+          await deleteDoc(ref);
+        } catch (e) {}
+      }
+    };
+
     function loadLocalRecords() {
       try {
         const cached = localStorage.getItem('youpi_payments');
@@ -1030,22 +1592,85 @@
       }, 2500);
     }
 
+    // Web Audio API Synthesized Chimes (Zero external audio assets)
+    function playSuccessChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+        
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(1046.5, now); // C6
+        gain1.gain.setValueAtTime(0.12, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1318.5, now + 0.12); // E6
+        gain2.gain.setValueAtTime(0.15, now + 0.12);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.55);
+      } catch (e) {}
+    }
+
+    function playScanBeep() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1760, now); // A6
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e) {}
+    }
+
     function switchMainScreen(screen) {
       const scrPay = document.getElementById('screenPay');
+      const scrCards = document.getElementById('screenCards');
       const scrLedger = document.getElementById('screenLedger');
       const dockPay = document.getElementById('navDockPay');
+      const dockCards = document.getElementById('navDockCards');
       const dockLedger = document.getElementById('navDockLedger');
 
+      // Hide all main screens
+      [scrPay, scrCards, scrLedger].forEach(s => {
+        if (s) s.classList.add('hidden');
+      });
+
+      // Reset bottom dock buttons
+      [dockPay, dockCards, dockLedger].forEach(d => {
+        if (d) d.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press";
+      });
+
       if (screen === 'pay') {
-        scrPay.classList.remove('hidden');
-        scrLedger.classList.add('hidden');
-        dockPay.className = "flex flex-col items-center gap-1 text-white btn-press";
-        dockLedger.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press";
+        if (scrPay) scrPay.classList.remove('hidden');
+        if (dockPay) dockPay.className = "flex flex-col items-center gap-1 text-white btn-press";
+      } else if (screen === 'cards') {
+        if (scrCards) scrCards.classList.remove('hidden');
+        if (dockCards) dockCards.className = "flex flex-col items-center gap-1 text-white btn-press";
+        renderSavedCards();
       } else {
-        scrPay.classList.add('hidden');
-        scrLedger.classList.remove('hidden');
-        dockLedger.className = "flex flex-col items-center gap-1 text-white btn-press";
-        dockPay.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press";
+        if (scrLedger) scrLedger.classList.remove('hidden');
+        if (dockLedger) dockLedger.className = "flex flex-col items-center gap-1 text-white btn-press";
         renderLedger();
       }
       lucide.createIcons();
@@ -1066,26 +1691,34 @@
       const closeBtn = document.getElementById('upiSetupCloseBtn');
 
       if (recipientVpa) {
-        vpaDisplay.textContent = recipientVpa;
-        vpaDisplay.className = 'text-neutral-200 font-mono';
-        nameDisplay.textContent = recipientName || recipientVpa.split('@')[0];
+        if (vpaDisplay) {
+          vpaDisplay.textContent = recipientVpa;
+          vpaDisplay.className = 'text-neutral-200 font-mono';
+        }
+        if (nameDisplay) nameDisplay.textContent = recipientName || recipientVpa.split('@')[0];
         if (verifiedIcon) verifiedIcon.classList.remove('hidden');
         const mono = (recipientName || recipientVpa).substring(0, 2).toUpperCase();
-        monoDisplay.textContent = mono;
-        monoBox.className = "w-12 h-12 rounded-2xl bg-[#18181c] hairline-border flex items-center justify-center text-white font-black text-sm tracking-wider shadow-inner shrink-0";
-        actionBtn.textContent = 'CHANGE';
-        actionBtn.className = "px-3 py-1.5 rounded-xl bg-[#141417] hairline-border text-[10px] font-mono uppercase tracking-wider text-neutral-300 hover:text-white transition btn-press";
+        if (monoDisplay) monoDisplay.textContent = mono;
+        if (monoBox) monoBox.className = "w-12 h-12 rounded-2xl bg-[#18181c] hairline-border flex items-center justify-center text-white font-black text-sm tracking-wider shadow-inner shrink-0";
+        if (actionBtn) {
+          actionBtn.textContent = 'CHANGE';
+          actionBtn.className = "px-3 py-1.5 rounded-xl bg-[#141417] hairline-border text-[10px] font-mono uppercase tracking-wider text-neutral-300 hover:text-white transition btn-press";
+        }
         if (clearBtn) clearBtn.classList.remove('hidden');
         if (closeBtn) closeBtn.classList.remove('hidden');
       } else {
-        vpaDisplay.textContent = 'Not configured';
-        vpaDisplay.className = 'text-neutral-500 italic font-mono';
-        nameDisplay.textContent = 'Tap to Set Recipient';
+        if (vpaDisplay) {
+          vpaDisplay.textContent = 'Not configured';
+          vpaDisplay.className = 'text-neutral-500 italic font-mono';
+        }
+        if (nameDisplay) nameDisplay.textContent = 'Tap to Set Recipient';
         if (verifiedIcon) verifiedIcon.classList.add('hidden');
-        monoDisplay.textContent = '+';
-        monoBox.className = "w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0";
-        actionBtn.textContent = 'SET UPI';
-        actionBtn.className = "px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press";
+        if (monoDisplay) monoDisplay.textContent = '+';
+        if (monoBox) monoBox.className = "w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0";
+        if (actionBtn) {
+          actionBtn.textContent = 'SET UPI';
+          actionBtn.className = "px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press";
+        }
         if (clearBtn) clearBtn.classList.add('hidden');
         if (closeBtn) closeBtn.classList.add('hidden');
       }
@@ -1169,14 +1802,13 @@
 
     function updateAmountDisplays() {
       const amt = parseFloat(document.getElementById('payAmount').value) || 0;
-      document.getElementById('btnAmountLabel').textContent = amt.toFixed(2);
+      const btnLabel = document.getElementById('btnAmountLabel');
+      if (btnLabel) btnLabel.textContent = amt.toFixed(2);
     }
     document.getElementById('payAmount').addEventListener('input', updateAmountDisplays);
 
     function constructUpiUri() {
-      if (!recipientVpa) {
-        return null;
-      }
+      if (!recipientVpa) return null;
       const vpa = recipientVpa;
       const name = recipientName || 'PayOne Merchant';
       const amount = parseFloat(document.getElementById('payAmount').value) || 0;
@@ -1194,6 +1826,672 @@
       return `upi://pay?${params.toString()}`;
     }
 
+    // ==========================================
+    // 💳 CARD VAULT & MANAGEMENT SYSTEM
+    // ==========================================
+    let savedCards = [];
+    try {
+      const cachedCards = localStorage.getItem('payone_saved_cards');
+      if (cachedCards) savedCards = JSON.parse(cachedCards);
+    } catch (e) {}
+
+    function validateLuhn(num) {
+      const clean = (num || '').replace(/\D/g, '');
+      if (clean.length < 13 || clean.length > 19) return false;
+      let sum = 0;
+      let shouldDouble = false;
+      for (let i = clean.length - 1; i >= 0; i--) {
+        let digit = parseInt(clean.charAt(i), 10);
+        if (shouldDouble) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+      return (sum % 10) === 0;
+    }
+
+    window.syncFirestoreCards = function(firestoreCards) {
+      if (Array.isArray(firestoreCards)) {
+        savedCards = firestoreCards;
+        localStorage.setItem('payone_saved_cards', JSON.stringify(savedCards));
+        renderSavedCards();
+      }
+    };
+
+    function detectCardNetwork(num) {
+      const clean = (num || '').replace(/\D/g, '');
+      if (/^4/.test(clean)) return { name: 'VISA', badge: 'VISA', color: 'italic text-white font-serif' };
+      if (/^(5[1-5]|2[2-7])/.test(clean)) return { name: 'MASTERCARD', badge: 'MASTERCARD', color: 'font-mono text-orange-400 font-bold' };
+      if (/^(60|65|81|82|508)/.test(clean)) return { name: 'RUPAY', badge: 'RUPAY', color: 'font-mono text-emerald-400 font-bold' };
+      if (/^3[47]/.test(clean)) return { name: 'AMEX', badge: 'AMEX', color: 'font-mono text-sky-400 font-bold' };
+      return { name: 'CARD', badge: 'CARD', color: 'font-mono text-neutral-400' };
+    }
+
+    function renderSavedCards() {
+      const container = document.getElementById('savedCardsList');
+      const countEl = document.getElementById('savedCardsCount');
+      if (countEl) countEl.textContent = `${savedCards.length} ${savedCards.length === 1 ? 'CARD' : 'CARDS'}`;
+
+      const featBank = document.getElementById('featuredCardBank');
+      const featType = document.getElementById('featuredCardTypeBadge');
+      const featNum = document.getElementById('featuredCardNumber');
+      const featHolder = document.getElementById('featuredCardHolder');
+      const featExp = document.getElementById('featuredCardExpiry');
+      const featNet = document.getElementById('featuredCardNetworkBadge');
+
+      if (savedCards.length === 0) {
+        if (featBank) featBank.textContent = 'SECURE CARD VAULT';
+        if (featType) featType.textContent = 'TOKENIZED';
+        if (featNum) featNum.textContent = '•••• •••• •••• ••••';
+        if (featHolder) featHolder.textContent = 'ADD CARD TO ACTIVATE';
+        if (featExp) featExp.textContent = '--/--';
+        if (featNet) featNet.innerHTML = '<span class="text-sm font-black italic tracking-wider text-neutral-500 font-serif">CARD</span>';
+
+        if (container) {
+          container.innerHTML = `
+            <div class="py-6 px-4 text-center space-y-3">
+              <div class="w-10 h-10 rounded-full bg-neutral-900 hairline-border text-neutral-400 mx-auto flex items-center justify-center">
+                <i data-lucide="credit-card" class="w-5 h-5"></i>
+              </div>
+              <div class="space-y-1">
+                <div class="text-xs font-bold text-white">No Saved Cards in Vault</div>
+                <div class="text-[10px] font-mono text-neutral-500">Add your RuPay, Visa, or Mastercard for tokenized 1-tap checkout.</div>
+              </div>
+              <button onclick="openAddCardModal()" class="px-4 py-2 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press shadow">
+                + ADD CARD
+              </button>
+            </div>
+          `;
+          lucide.createIcons();
+        }
+        return;
+      }
+
+      // Update Featured Luxury Card on screen with active default card
+      const activeCard = savedCards.find(c => c.isDefault) || savedCards[0];
+      if (activeCard) {
+        if (featBank) featBank.textContent = activeCard.bankName.toUpperCase();
+        if (featType) featType.textContent = activeCard.typeBadge || 'SECURE';
+        if (featNum) featNum.textContent = activeCard.maskedNumber || '•••• •••• •••• 4242';
+        if (featHolder) featHolder.textContent = (activeCard.holderName || 'PAYONE MEMBER').toUpperCase();
+        if (featExp) featExp.textContent = activeCard.expiry || '12/28';
+        if (featNet) {
+          featNet.innerHTML = `<span class="text-sm font-black italic tracking-wider text-white font-serif">${activeCard.network || 'VISA'}</span>`;
+        }
+      }
+
+      if (!container) return;
+
+      container.innerHTML = savedCards.map(c => `
+        <div class="p-3.5 bg-[#08080a] hairline-border rounded-2xl flex items-center justify-between group hover:border-neutral-700 transition">
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="w-10 h-7 rounded-lg emv-chip flex items-center justify-center shrink-0 border border-amber-300/40">
+              <span class="text-[7px] font-mono font-black text-amber-950">${c.network.substring(0, 2)}</span>
+            </div>
+            <div class="overflow-hidden">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-white tracking-tight truncate">${c.bankName}</span>
+                ${c.isDefault ? '<span class="text-[8px] font-mono px-1.5 py-0.2 rounded bg-white text-black font-extrabold uppercase">DEFAULT</span>' : ''}
+              </div>
+              <div class="text-[10px] font-mono text-neutral-400 mt-0.5">
+                ${c.maskedNumber} • <span class="text-neutral-500">${c.expiry}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="payWithSpecificCard('${c.id}')" class="px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press shadow">
+              PAY
+            </button>
+            <button onclick="deleteSavedCard('${c.id}')" class="p-1.5 text-neutral-600 hover:text-white transition" title="Delete card">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function openAddCardModal() {
+      document.getElementById('inputCardNumber').value = '';
+      document.getElementById('inputCardHolder').value = '';
+      document.getElementById('inputCardExpiry').value = '';
+      document.getElementById('inputCardCvv').value = '';
+      document.getElementById('addCardModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeAddCardModal() {
+      document.getElementById('addCardModal').classList.add('hidden');
+    }
+
+    function handleCardNumberInput(input) {
+      let val = input.value.replace(/\D/g, '').substring(0, 19);
+      let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+      input.value = formatted;
+
+      const network = detectCardNetwork(val);
+      const icon = document.getElementById('cardBrandIcon');
+      const prevNum = document.getElementById('previewCardNumber');
+      const prevNet = document.getElementById('previewCardNetwork');
+
+      if (icon) icon.textContent = network.name;
+      if (prevNum) prevNum.textContent = formatted || '•••• •••• •••• ••••';
+      if (prevNet) prevNet.textContent = network.name;
+    }
+
+    function handleCardHolderInput(input) {
+      const val = input.value.toUpperCase();
+      const prevHolder = document.getElementById('previewCardHolder');
+      if (prevHolder) prevHolder.textContent = val || 'CARDHOLDER NAME';
+    }
+
+    function handleCardExpiryInput(input) {
+      let val = input.value.replace(/\D/g, '').substring(0, 4);
+      if (val.length >= 3) {
+        val = val.substring(0, 2) + '/' + val.substring(2);
+      }
+      input.value = val;
+      const prevExp = document.getElementById('previewCardExpiry');
+      if (prevExp) prevExp.textContent = val || 'MM/YY';
+    }
+
+    function handleCardBankChange(select) {
+      const prevBank = document.getElementById('previewCardBank');
+      if (prevBank) prevBank.textContent = select.value.toUpperCase();
+    }
+
+    function submitAddCard() {
+      const rawNum = document.getElementById('inputCardNumber').value.replace(/\D/g, '');
+      const holder = document.getElementById('inputCardHolder').value.trim();
+      const expiry = document.getElementById('inputCardExpiry').value.trim();
+      const cvv = document.getElementById('inputCardCvv').value.trim();
+      const bank = document.getElementById('inputCardBank').value;
+
+      if (!validateLuhn(rawNum)) {
+        showToast("Invalid card number. Please check the digits.");
+        return;
+      }
+      if (!holder) {
+        showToast("Please enter cardholder name.");
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+        showToast("Please enter expiry in MM/YY format.");
+        return;
+      }
+      const [expMonth, expYear] = expiry.split('/').map(s => parseInt(s, 10));
+      if (!expMonth || expMonth < 1 || expMonth > 12) {
+        showToast("Invalid expiry month (must be 01-12).");
+        return;
+      }
+      const now = new Date();
+      const currentYear = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+      if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+        showToast("Card is expired. Please enter an active card.");
+        return;
+      }
+      if (!/^\d{3,4}$/.test(cvv)) {
+        showToast("Please enter a valid 3 or 4-digit CVV.");
+        return;
+      }
+
+      const network = detectCardNetwork(rawNum);
+      const masked = '•••• •••• •••• ' + rawNum.slice(-4);
+      const newCard = {
+        id: 'card_' + Date.now(),
+        cardNumber: rawNum,
+        maskedNumber: masked,
+        holderName: holder,
+        expiry: expiry,
+        bankName: bank,
+        network: network.name,
+        typeBadge: 'TOKENIZED',
+        isDefault: savedCards.length === 0
+      };
+
+      savedCards.unshift(newCard);
+      localStorage.setItem('payone_saved_cards', JSON.stringify(savedCards));
+      if (window.persistCardToFirestore) window.persistCardToFirestore(newCard);
+
+      renderSavedCards();
+      closeAddCardModal();
+      showToast("Card tokenized and saved: " + masked);
+    }
+
+    function deleteSavedCard(cardId) {
+      savedCards = savedCards.filter(c => c.id !== cardId);
+      localStorage.setItem('payone_saved_cards', JSON.stringify(savedCards));
+      if (window.deleteCardFromFirestore) window.deleteCardFromFirestore(cardId);
+      renderSavedCards();
+      showToast("Card removed.");
+    }
+
+    function payWithSpecificCard(cardId) {
+      const card = savedCards.find(c => c.id === cardId);
+      if (!card) return;
+      launchNativePaymentModal(card);
+    }
+
+    // ==========================================
+    // 📷 SCAN TO PAY (CAMERA QR SCANNER)
+    // ==========================================
+    let cameraStream = null;
+    let cameraFacingMode = 'environment';
+    let isScanningActive = false;
+    let torchState = false;
+
+    async function openScannerModal() {
+      document.getElementById('scannerModal').classList.remove('hidden');
+      lucide.createIcons();
+      await initCameraScanner();
+    }
+
+    function closeScannerModal() {
+      stopCameraStream();
+      document.getElementById('scannerModal').classList.add('hidden');
+    }
+
+    async function initCameraScanner() {
+      const video = document.getElementById('scannerVideo');
+      const feedback = document.getElementById('scannerFeedback');
+      stopCameraStream();
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          if (feedback) feedback.textContent = "Camera not supported on this browser. Use Upload QR.";
+          return;
+        }
+
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: cameraFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+
+        video.srcObject = cameraStream;
+        await video.play();
+        isScanningActive = true;
+        if (feedback) feedback.textContent = "Align QR code inside the viewfinder.";
+        requestAnimationFrame(scanVideoFrame);
+      } catch (err) {
+        console.warn("Camera init error:", err);
+        if (feedback) feedback.textContent = "Camera access denied. Use 'Upload QR Image' button.";
+      }
+    }
+
+    function stopCameraStream() {
+      isScanningActive = false;
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      const video = document.getElementById('scannerVideo');
+      if (video) video.srcObject = null;
+    }
+
+    async function toggleScannerTorch() {
+      if (!cameraStream) return;
+      const track = cameraStream.getVideoTracks()[0];
+      if (!track) return;
+      try {
+        torchState = !torchState;
+        await track.applyConstraints({ advanced: [{ torch: torchState }] });
+        showToast(torchState ? "Flashlight ON" : "Flashlight OFF");
+      } catch (e) {
+        showToast("Flashlight not supported on this lens.");
+      }
+    }
+
+    async function switchScannerCamera() {
+      cameraFacingMode = (cameraFacingMode === 'environment') ? 'user' : 'environment';
+      await initCameraScanner();
+    }
+
+    async function scanVideoFrame() {
+      if (!isScanningActive) return;
+      const video = document.getElementById('scannerVideo');
+      const canvas = document.getElementById('scannerCanvas');
+      if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+        requestAnimationFrame(scanVideoFrame);
+        return;
+      }
+
+      // 1. Try BarcodeDetector native API
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0 && barcodes[0].rawValue) {
+            processDecodedQr(barcodes[0].rawValue);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Fallback to jsQR canvas processing
+      if (typeof jsQR !== 'undefined' && canvas) {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+        if (code && code.data) {
+          processDecodedQr(code.data);
+          return;
+        }
+      }
+
+      requestAnimationFrame(scanVideoFrame);
+    }
+
+    function handleQrFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.getElementById('scannerCanvas');
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          if (typeof jsQR !== 'undefined') {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code && code.data) {
+              processDecodedQr(code.data);
+              return;
+            }
+          }
+          showToast("No QR code detected in this image. Try another.");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function processDecodedQr(rawText) {
+      stopCameraStream();
+      playScanBeep();
+      if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
+
+      let parsedVpa = '';
+      let parsedName = '';
+      let parsedAmount = '';
+      let parsedNote = '';
+
+      if (rawText.startsWith('upi://') || rawText.includes('pa=')) {
+        try {
+          const urlStr = rawText.startsWith('upi://') ? rawText.replace('upi://pay?', 'http://dummy.com/?') : 'http://dummy.com/?' + rawText;
+          const url = new URL(urlStr);
+          parsedVpa = url.searchParams.get('pa') || '';
+          parsedName = url.searchParams.get('pn') || '';
+          parsedAmount = url.searchParams.get('am') || '';
+          parsedNote = url.searchParams.get('tn') || '';
+        } catch (e) {}
+      } else if (rawText.includes('@')) {
+        parsedVpa = rawText.trim();
+      }
+
+      if (parsedVpa) {
+        recipientVpa = parsedVpa;
+        recipientName = parsedName || parsedVpa.split('@')[0];
+        localStorage.setItem('payone_recipient_vpa', recipientVpa);
+        localStorage.setItem('payone_recipient_name', recipientName);
+        syncRecipientUI();
+
+        if (parsedAmount && parseFloat(parsedAmount) > 0) {
+          document.getElementById('payAmount').value = parseFloat(parsedAmount);
+          updateAmountDisplays();
+        }
+        if (parsedNote) {
+          document.getElementById('payNote').value = parsedNote;
+        }
+
+        closeScannerModal();
+        showToast(`Scanned: ${recipientName} (${recipientVpa})`);
+        setTimeout(() => {
+          launchNativePaymentModal();
+        }, 300);
+      } else {
+        closeScannerModal();
+        showToast("QR Text: " + rawText.substring(0, 40));
+      }
+    }
+
+    // ==========================================
+    // ⚡ NATIVE IN-APP PAYMENT CHECKOUT HUB
+    // ==========================================
+    let currentPayingCard = null;
+    let activeOtpCode = '628491';
+    let otpTimerInterval = null;
+    let currentEnteredPin = '';
+
+    function launchNativePaymentModal(presetCard = null) {
+      if (!recipientVpa) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+      if (amount <= 0) {
+        showToast("Please enter an amount greater than 0");
+        return;
+      }
+
+      currentActiveUpiUri = constructUpiUri();
+      document.getElementById('nativePayAmount').textContent = amount.toFixed(2);
+      document.getElementById('nativePayPayee').textContent = recipientName ? `${recipientName} (${recipientVpa})` : recipientVpa;
+
+      // Populate Saved Card Select
+      const select = document.getElementById('nativeCardSelect');
+      if (select) {
+        if (savedCards.length === 0) {
+          select.innerHTML = '<option value="">No saved cards — tap Add Card</option>';
+        } else {
+          select.innerHTML = savedCards.map(c => `
+            <option value="${c.id}" ${presetCard && presetCard.id === c.id ? 'selected' : (c.isDefault ? 'selected' : '')}>
+              ${c.bankName} (${c.network}) ${c.maskedNumber}
+            </option>
+          `).join('');
+        }
+      }
+
+      currentPayingCard = presetCard || savedCards.find(c => c.isDefault) || savedCards[0] || null;
+      document.getElementById('nativePaymentModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeNativePaymentModal() {
+      document.getElementById('nativePaymentModal').classList.add('hidden');
+    }
+
+    function updateNativeCardDisplay(select) {
+      const card = savedCards.find(c => c.id === select.value);
+      if (card) currentPayingCard = card;
+    }
+
+    function startNativeCardPayment() {
+      const select = document.getElementById('nativeCardSelect');
+      const cardId = select ? select.value : '';
+      const card = savedCards.find(c => c.id === cardId) || currentPayingCard;
+
+      if (!card) {
+        showToast("Please save a card first or select from the dropdown.");
+        switchMainScreen('cards');
+        closeNativePaymentModal();
+        return;
+      }
+
+      const cvv = document.getElementById('nativeCardCvv').value.trim();
+      if (!cvv || cvv.length < 3) {
+        showToast("Please enter 3-digit CVV for card authorization.");
+        document.getElementById('nativeCardCvv').focus();
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+      closeNativePaymentModal();
+      openCardOtpModal(card, amount);
+    }
+
+    // ==========================================
+    // 🔐 3D SECURE 2.0 BANK OTP AUTHORIZATION
+    // ==========================================
+    function openCardOtpModal(card, amount) {
+      currentPayingCard = card;
+      
+      const title = document.getElementById('otpBankTitle');
+      const amtDisplay = document.getElementById('otpAmountDisplay');
+      const maskDisplay = document.getElementById('otpCardMaskDisplay');
+      const input = document.getElementById('bankOtpInput');
+
+      if (title) title.textContent = `${card.bankName.toUpperCase()} 3D-SECURE 2.0`;
+      if (amtDisplay) amtDisplay.textContent = amount.toFixed(2);
+      if (maskDisplay) maskDisplay.textContent = card.maskedNumber;
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 250);
+      }
+
+      startOtpTimer();
+      document.getElementById('cardOtpModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeCardOtpModal() {
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+      document.getElementById('cardOtpModal').classList.add('hidden');
+    }
+
+    function startOtpTimer() {
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+      let seconds = 30;
+      const countdownEl = document.getElementById('otpCountdown');
+      if (countdownEl) countdownEl.textContent = `${seconds}s`;
+
+      otpTimerInterval = setInterval(() => {
+        seconds--;
+        if (countdownEl) countdownEl.textContent = `${seconds}s`;
+        if (seconds <= 0) {
+          clearInterval(otpTimerInterval);
+        }
+      }, 1000);
+    }
+
+    function resendBankOtp() {
+      startOtpTimer();
+      showToast("A new 3D Secure OTP has been dispatched to your registered mobile.");
+    }
+
+    function submitBankOtp() {
+      const entered = document.getElementById('bankOtpInput').value.trim();
+      const btn = document.getElementById('submitOtpBtn');
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+
+      if (!entered || !/^\d{6}$/.test(entered)) {
+        showToast("Please enter the 6-digit bank OTP received via SMS.");
+        return;
+      }
+
+      btn.textContent = "VERIFYING WITH ISSUING BANK...";
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.textContent = "AUTHORIZE PAYMENT";
+        btn.disabled = false;
+        closeCardOtpModal();
+
+        const authRef = 'AUTH-' + Date.now().toString().slice(-6) + Math.floor(1000 + Math.random() * 9000);
+        const cardDetails = currentPayingCard ? `${currentPayingCard.bankName} •••• ${currentPayingCard.cardNumber.slice(-4)} (${currentPayingCard.network})` : 'Card Payment';
+
+        const paymentRecord = {
+          orderId: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
+          utr: authRef,
+          amount: amount,
+          currency: 'INR',
+          payee: recipientVpa,
+          payeeName: recipientName,
+          method: 'CARD',
+          cardDetails: cardDetails,
+          timestamp: Date.now(),
+          dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: 'SETTLED'
+        };
+
+        if (window.persistPayment) window.persistPayment(paymentRecord);
+        playSuccessChime();
+        openPaymentSuccessModal(paymentRecord);
+      }, 700);
+    }
+
+    // ==========================================
+    // 🛡️ NATIVE UPI UTR SETTLEMENT
+    // ==========================================
+    function confirmNativePaymentWithUtr() {
+      const input = document.getElementById('nativeBankUtrInput');
+      const utr = input ? input.value.trim() : '';
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+
+      if (!utr || !/^\d{12}$/.test(utr)) {
+        showToast("Please enter a valid 12-digit Bank Reference (UTR) number.");
+        return;
+      }
+
+      closeNativePaymentModal();
+
+      const paymentRecord = {
+        orderId: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
+        utr: utr,
+        amount: amount,
+        currency: 'INR',
+        payee: recipientVpa,
+        payeeName: recipientName,
+        method: 'UPI_NATIVE',
+        timestamp: Date.now(),
+        dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'SETTLED'
+      };
+
+      if (window.persistPayment) window.persistPayment(paymentRecord);
+      playSuccessChime();
+      openPaymentSuccessModal(paymentRecord);
+      showToast("Payment settled via Bank UTR: " + utr);
+    }
+
+    // ==========================================
+    // 🎉 PAYMENT SUCCESS CELEBRATION MODAL
+    // ==========================================
+    function openPaymentSuccessModal(record) {
+      document.getElementById('successModalAmount').textContent = Number(record.amount).toFixed(2);
+      document.getElementById('successModalPayee').textContent = record.payeeName ? `${record.payeeName} (${record.payee})` : record.payee;
+      document.getElementById('successModalMethod').textContent = record.method === 'CARD' ? (record.cardDetails || 'CARD (3DS)') : 'UPI DIRECT';
+      document.getElementById('successModalRef').textContent = record.utr || 'CONFIRMED';
+      document.getElementById('successModalTime').textContent = record.dateStr || 'Just now';
+
+      document.getElementById('paymentSuccessModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('paymentSuccessModal').classList.add('hidden');
+    }
+
+    function closeSuccessModalAndGoToLedger() {
+      closeSuccessModal();
+      switchMainScreen('ledger');
+    }
+
+    // Fallback QR Modal Presentation
     function launchPaymentModal() {
       if (!recipientVpa) {
         showToast("Set your recipient UPI ID first");
@@ -1258,10 +2556,16 @@
       const rawParams = currentActiveUpiUri.replace('upi://pay?', '');
       let intentUri = currentActiveUpiUri;
 
-      if (appType === 'paytm') {
-        intentUri = `paytmmp://pay?${rawParams}`;
+      if (appType === 'gpay') {
+        intentUri = `tez://upi/pay?${rawParams}`;
       } else if (appType === 'phonepe') {
         intentUri = `phonepe://pay?${rawParams}`;
+      } else if (appType === 'paytm') {
+        intentUri = `paytmmp://pay?${rawParams}`;
+      } else if (appType === 'bhim') {
+        intentUri = `bhim://pay?${rawParams}`;
+      } else if (appType === 'cred') {
+        intentUri = `credpay://upi/pay?${rawParams}`;
       } else if (appType === 'mobikwik') {
         intentUri = `mobikwik://upi/pay?${rawParams}`;
       }
@@ -1338,31 +2642,40 @@
         return;
       }
 
-      container.innerHTML = records.map(item => `
-        <div class="py-3 px-3.5 bg-[#08080a] hairline-border rounded-2xl flex items-center justify-between group">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-black text-xs shrink-0">
-              ₹
-            </div>
-            <div class="space-y-0.5">
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xs font-bold font-mono text-white tracking-wider">${item.utr || 'DIRECT-P2P'}</span>
-                <span class="text-[8px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-neutral-400 hairline-border">${item.method || 'UPI'}</span>
+      container.innerHTML = records.map(item => {
+        const isCard = item.method === 'CARD';
+        const isNativeUpi = item.method === 'UPI_NATIVE';
+        const badgeLabel = isCard ? 'CARD' : (isNativeUpi ? 'UPI DIRECT' : 'UPI');
+        const iconSvg = isCard ? 'credit-card' : 'zap';
+
+        return `
+          <div class="py-3 px-3.5 bg-[#08080a] hairline-border rounded-2xl flex items-center justify-between group">
+            <div class="flex items-center space-x-3 overflow-hidden">
+              <div class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center font-black text-xs shrink-0">
+                <i data-lucide="${iconSvg}" class="w-4 h-4 text-black stroke-[2.5]"></i>
               </div>
-              <div class="text-[10px] font-mono text-neutral-500">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${item.payee || recipientVpa || 'UPI'}</div>
+              <div class="space-y-0.5 overflow-hidden">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-xs font-bold font-mono text-white tracking-wider truncate">${item.utr || 'DIRECT-P2P'}</span>
+                  <span class="text-[8px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-neutral-400 hairline-border shrink-0">${badgeLabel}</span>
+                </div>
+                <div class="text-[10px] font-mono text-neutral-500 truncate">
+                  ${item.cardDetails || (item.payee || recipientVpa || 'UPI')} • ${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3 text-right shrink-0">
+              <div>
+                <span class="text-xs font-black font-sans text-white block">+₹${Number(item.amount).toFixed(2)}</span>
+                <span class="text-[8px] font-mono text-neutral-400 uppercase tracking-widest block font-bold">SETTLED</span>
+              </div>
+              <button onclick="deletePaymentRecord('${item._id || item.utr || ''}')" class="text-neutral-600 hover:text-white transition p-1" title="Delete record">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
           </div>
-          <div class="flex items-center space-x-3 text-right">
-            <div>
-              <span class="text-xs font-black font-sans text-white block">+₹${Number(item.amount).toFixed(2)}</span>
-              <span class="text-[8px] font-mono text-neutral-400 uppercase tracking-widest block font-bold">SETTLED</span>
-            </div>
-            <button onclick="deletePaymentRecord('${item._id || item.utr || ''}')" class="text-neutral-600 hover:text-white transition p-1" title="Delete record">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       lucide.createIcons();
     }
@@ -1401,7 +2714,7 @@
         if (delta >= maxTranslate * 0.92) {
           isDragging = false;
           resetSlider();
-          launchPaymentModal();
+          launchNativePaymentModal();
         }
       }
 
@@ -1430,6 +2743,7 @@
       setupSlider();
       updateAmountDisplays();
       syncRecipientUI();
+      renderSavedCards();
 
       // Mandatory initial setup: Prompt for recipient UPI first if none is configured
       if (!recipientVpa) {
