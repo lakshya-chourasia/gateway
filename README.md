@@ -9,7 +9,7 @@
    ╚═╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝    ╚═╝      ╚═════╝
 ```
 
-# YOUPI PG V2
+# Lakshya PG V2
 
 ### A Self-Hosted UPI Payment Gateway for Merchants
 
