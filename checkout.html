@@ -53,7 +53,10 @@
       color-scheme: dark;
     }
     body {
-      background-color: #000000;
+      background-color: #030304;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 35%);
       color: #ffffff;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-font-smoothing: antialiased;
@@ -69,6 +72,20 @@
     .hairline-border-t {
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
+    .glass-card {
+      background: rgba(14, 14, 18, 0.78);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 32px -8px rgba(0, 0, 0, 0.7);
+    }
+    .sheet-grab-bar {
+      width: 40px;
+      height: 4px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 0 auto 14px;
+    }
     .slider-thumb {
       touch-action: pan-x;
     }
@@ -80,8 +97,12 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    .btn-press {
+      transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+    }
     .btn-press:active {
-      transform: scale(0.97);
+      transform: scale(0.96);
+      opacity: 0.88;
     }
     @keyframes scanline {
       0% { top: 6%; opacity: 0.8; }
@@ -91,18 +112,39 @@
     .scan-laser {
       animation: scanline 2.2s ease-in-out infinite;
     }
+    @keyframes shimmer-sweep {
+      0% { transform: translateX(-150%) rotate(25deg); }
+      100% { transform: translateX(200%) rotate(25deg); }
+    }
     .virtual-card-shimmer {
-      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0.04) 100%);
+    }
+    .card-sheen-sweep {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%);
+      pointer-events: none;
+      animation: shimmer-sweep 7s ease-in-out infinite;
     }
     .emv-chip {
       background: linear-gradient(135deg, #d4af37 0%, #aa7c11 50%, #f3e5ab 100%);
     }
+    .ambient-dot-pulse {
+      animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
   </style>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col items-center justify-start antialiased selection:bg-white selection:text-black">
+<body class="bg-[#030304] text-white min-h-screen flex flex-col items-center justify-start antialiased selection:bg-white selection:text-black">
 
   <!-- AUTHENTIC PAYMENT APP SHELL CONTAINER (Max-width 420px mobile envelope) -->
-  <div class="w-full max-w-md min-h-screen flex flex-col justify-between relative bg-black sm:border-x sm:border-neutral-900 shadow-2xl">
+  <div class="w-full max-w-md min-h-screen flex flex-col justify-between relative bg-black/85 backdrop-blur-3xl sm:border-x sm:border-neutral-900/80 shadow-[0_0_100px_rgba(0,0,0,0.95)]">
 
     <!-- TOP APP BAR -->
     <header class="sticky top-0 z-40 bg-black/90 backdrop-blur-xl hairline-border-b px-5 h-16 flex items-center justify-between">
@@ -147,101 +189,108 @@
       <section id="screenPay" class="space-y-4">
 
         <!-- Recipient Header Card (Fintech Style - Dynamic & Clickable) -->
-        <div id="recipientHeaderCard" onclick="openUpiSetupModal(false)" class="bg-[#0c0c0e] hairline-border rounded-3xl p-4 flex items-center justify-between cursor-pointer hover:border-neutral-700 transition">
+        <div id="recipientHeaderCard" onclick="openUpiSetupModal(false)" class="glass-card rounded-3xl p-4 flex items-center justify-between cursor-pointer hover:border-neutral-600 transition shadow-xl group">
           <div class="flex items-center space-x-3.5 overflow-hidden">
-            <div id="payeeMonogramBox" class="w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0 transition-colors">
+            <div id="payeeMonogramBox" class="w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0 transition-colors group-hover:border-neutral-500">
               <span id="payeeMonogram">+</span>
             </div>
             <div class="overflow-hidden">
               <div class="flex items-center space-x-1.5">
-                <span id="targetNameDisplay" class="text-sm font-extrabold text-white truncate tracking-tight">Tap to Set Recipient</span>
-                <i id="targetVerifiedIcon" data-lucide="check-circle-2" class="w-3.5 h-3.5 text-white shrink-0 fill-white/20 hidden"></i>
+                <span id="targetNameDisplay" class="text-sm font-black text-white truncate tracking-tight">Tap to Set Recipient</span>
+                <i id="targetVerifiedIcon" data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 fill-emerald-400/20 hidden"></i>
               </div>
-              <div class="flex items-center space-x-1 text-[11px] font-mono text-neutral-400 truncate mt-0.5">
-                <span>UPI ID:</span>
-                <span id="cardPayeeDisplay" class="text-neutral-500 italic">Not configured</span>
+              <div class="flex items-center space-x-1.5 text-[11px] font-mono text-neutral-400 truncate mt-0.5">
+                <span class="text-neutral-500">UPI ID:</span>
+                <span id="cardPayeeDisplay" class="text-neutral-400 font-bold italic">Not configured</span>
               </div>
             </div>
           </div>
-          <button id="recipientActionBtn" onclick="event.stopPropagation(); openUpiSetupModal(false);" class="px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press">
+          <button id="recipientActionBtn" onclick="event.stopPropagation(); openUpiSetupModal(false);" class="px-3.5 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press shadow">
             SET UPI
           </button>
         </div>
 
         <!-- Quick Action Bar: Scan to Pay & Saved Cards -->
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="openScannerModal()" class="py-2.5 px-3 rounded-2xl bg-[#0c0c0e] hairline-border hover:border-neutral-600 transition flex items-center space-x-2.5 btn-press">
-            <div class="w-7 h-7 rounded-xl bg-white text-black flex items-center justify-center shrink-0">
-              <i data-lucide="scan" class="w-4 h-4 stroke-[2.5]"></i>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="openScannerModal()" class="glass-card hover:border-neutral-500 rounded-2xl py-3 px-3.5 transition flex items-center space-x-3 btn-press group">
+            <div class="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center shrink-0 shadow group-hover:scale-105 transition-transform">
+              <i data-lucide="scan-line" class="w-4 h-4 stroke-[2.5]"></i>
             </div>
             <div class="text-left">
               <div class="text-xs font-black text-white tracking-tight">SCAN TO PAY</div>
-              <div class="text-[9px] font-mono text-neutral-500">Camera &amp; UPI QR</div>
+              <div class="text-[9px] font-mono text-neutral-400">Live Camera QR</div>
             </div>
           </button>
 
-          <button onclick="switchMainScreen('cards')" class="py-2.5 px-3 rounded-2xl bg-[#0c0c0e] hairline-border hover:border-neutral-600 transition flex items-center space-x-2.5 btn-press">
-            <div class="w-7 h-7 rounded-xl bg-[#18181c] hairline-border flex items-center justify-center text-white shrink-0">
+          <button onclick="switchMainScreen('cards')" class="glass-card hover:border-neutral-500 rounded-2xl py-3 px-3.5 transition flex items-center space-x-3 btn-press group">
+            <div class="w-8 h-8 rounded-xl bg-[#1a1a20] hairline-border flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
               <i data-lucide="credit-card" class="w-4 h-4 text-white"></i>
             </div>
             <div class="text-left">
               <div class="text-xs font-black text-white tracking-tight">SAVED CARDS</div>
-              <div class="text-[9px] font-mono text-neutral-500">1-Tap Card Pay</div>
+              <div class="text-[9px] font-mono text-neutral-400">Fintech Vault</div>
             </div>
           </button>
         </div>
 
         <!-- HERO AMOUNT CARD (BOLD OVERSIZED FINTECH TYPOGRAPHY) -->
-        <div class="bg-[#0c0c0e] hairline-border rounded-3xl p-6 text-center space-y-3 relative overflow-hidden">
-          <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 font-bold">ENTER AMOUNT</div>
+        <div class="glass-card rounded-3xl p-6 text-center space-y-3 relative overflow-hidden"
+             style="background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(14, 14, 18, 0.85) 75%);">
+          <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-400 font-bold flex items-center justify-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+            <span>ENTER TRANSFER AMOUNT</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+          </div>
           
-          <!-- Massive Bold Typography -->
-          <div class="flex items-center justify-center py-1">
-            <span class="text-4xl sm:text-5xl font-black text-neutral-500 mr-2 font-mono">₹</span>
+          <!-- Massive Bold Typography with Specular Shimmer -->
+          <div class="flex items-center justify-center py-2">
+            <span class="text-4xl sm:text-5xl font-black text-neutral-500 mr-1.5 font-mono select-none">₹</span>
             <input type="number" id="payAmount" value="500" min="1" step="any"
-              class="bg-transparent text-5xl sm:text-6xl font-black text-white text-center outline-none w-56 tracking-tighter font-sans">
+              class="bg-transparent text-5xl sm:text-6xl font-black text-white text-center outline-none w-56 tracking-tighter font-sans drop-shadow-sm focus:scale-105 transition-transform">
           </div>
 
-          <!-- Quick Increment Buttons -->
-          <div class="flex items-center justify-center gap-2 pt-2">
-            <button onclick="setAmount(100)" class="px-3.5 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition btn-press">₹100</button>
-            <button onclick="setAmount(500)" class="px-3.5 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition btn-press">₹500</button>
-            <button onclick="setAmount(1000)" class="px-3.5 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition btn-press">₹1,000</button>
-            <button onclick="setAmount(2000)" class="px-3.5 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition btn-press">₹2,000</button>
+          <!-- Quick Increment Buttons (Interactive Active State) -->
+          <div class="flex items-center justify-center gap-2 pt-1">
+            <button id="quickAmtBtn_100" onclick="setAmount(100)" class="px-4 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition-all btn-press">₹100</button>
+            <button id="quickAmtBtn_500" onclick="setAmount(500)" class="px-4 py-1.5 rounded-full bg-white text-black text-xs font-mono font-black shadow-md transition-all btn-press">₹500</button>
+            <button id="quickAmtBtn_1000" onclick="setAmount(1000)" class="px-4 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition-all btn-press">₹1,000</button>
+            <button id="quickAmtBtn_2000" onclick="setAmount(2000)" class="px-4 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition-all btn-press">₹2,000</button>
           </div>
         </div>
 
         <!-- Transaction Note Pill -->
-        <div class="bg-[#0c0c0e] hairline-border rounded-2xl px-4 py-3 flex items-center space-x-3">
-          <i data-lucide="message-square" class="w-4 h-4 text-neutral-500 shrink-0"></i>
+        <div class="glass-card rounded-2xl px-4 py-3.5 flex items-center space-x-3">
+          <i data-lucide="message-square" class="w-4 h-4 text-neutral-400 shrink-0"></i>
           <input type="text" id="payNote" value="Payment via PayOne" placeholder="Add a note or message"
-            class="bg-transparent text-xs font-medium text-white placeholder-neutral-600 outline-none w-full">
+            class="bg-transparent text-xs font-medium text-white placeholder-neutral-500 outline-none w-full">
         </div>
 
         <!-- Bank Routing Info Chip -->
-        <div class="flex items-center justify-between px-3 py-2 bg-[#0c0c0e] hairline-border rounded-xl text-[10px] font-mono text-neutral-400">
+        <div class="flex items-center justify-between px-3.5 py-2.5 bg-[#0c0c0e]/80 hairline-border rounded-xl text-[10px] font-mono text-neutral-400 shadow-inner">
           <div class="flex items-center space-x-2">
             <i data-lucide="shield-check" class="w-3.5 h-3.5 text-white"></i>
             <span>NPCI UPI PROTOCOL • ZERO CONVENIENCE FEE</span>
           </div>
-          <span class="text-neutral-500">P2P DIRECT</span>
+          <span class="text-neutral-500 font-bold">P2P DIRECT</span>
         </div>
 
         <!-- PRIMARY CALL-TO-ACTION (HEAVY BOLD PAYMENT APP BUTTON) -->
         <div class="space-y-3 pt-1">
-          <button onclick="launchNativePaymentModal()" class="w-full h-14 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-wider hover:bg-neutral-200 transition shadow-lg flex items-center justify-center gap-2 btn-press">
+          <button onclick="launchNativePaymentModal()" class="w-full h-14 rounded-2xl bg-white text-black font-black text-sm uppercase tracking-wider hover:bg-neutral-100 transition shadow-[0_0_30px_rgba(255,255,255,0.18)] hover:shadow-[0_0_40px_rgba(255,255,255,0.28)] flex items-center justify-center gap-2 btn-press group">
             <span>PROCEED TO PAY ₹<span id="btnAmountLabel">500.00</span></span>
-            <i data-lucide="arrow-right" class="w-4 h-4 text-black stroke-[3]"></i>
+            <i data-lucide="arrow-right" class="w-4 h-4 text-black stroke-[3] group-hover:translate-x-1 transition-transform"></i>
           </button>
 
-          <!-- Iconic Slide-To-Pay Slider Alternative -->
-          <div id="sliderTrack" class="relative w-full h-14 bg-black hairline-border rounded-full flex items-center select-none overflow-hidden p-1.5 cursor-pointer">
+          <!-- Iconic Slide-To-Pay Slider Alternative with Fluid Fill -->
+          <div id="sliderTrack" class="relative w-full h-14 bg-[#0a0a0c] hairline-border rounded-full flex items-center select-none overflow-hidden p-1.5 cursor-pointer shadow-inner">
+            <!-- Glowing Progressive Fill -->
+            <div id="sliderFill" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-white/5 via-white/15 to-white/30 rounded-full transition-none pointer-events-none" style="width: 0px;"></div>
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-500 font-extrabold pl-8">
+              <span class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400 font-extrabold pl-8 animate-pulse">
                 SLIDE TO CONFIRM &rarr;
               </span>
             </div>
-            <div id="sliderThumb" class="slider-thumb relative w-11 h-11 bg-white text-black rounded-full flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing z-10 transition-transform">
+            <div id="sliderThumb" class="slider-thumb relative w-11 h-11 bg-white text-black rounded-full flex items-center justify-center shadow-2xl cursor-grab active:cursor-grabbing z-10 transition-transform hover:scale-105">
               <i data-lucide="chevron-right" class="w-5 h-5 text-black stroke-[3]"></i>
             </div>
           </div>
@@ -304,6 +353,7 @@
              style="background: radial-gradient(circle at 85% 15%, #2c2d33 0%, #111114 60%, #060608 100%);">
           <!-- Metallic Gloss Sheen Overlay -->
           <div class="absolute inset-0 virtual-card-shimmer pointer-events-none"></div>
+          <div class="card-sheen-sweep pointer-events-none"></div>
 
           <!-- Card Top Row: Bank Name, Chip & Contactless -->
           <div class="flex items-center justify-between relative z-10">
@@ -391,28 +441,31 @@
     </main>
 
     <!-- FIXED MOBILE BOTTOM NAVIGATION -->
-    <nav class="sticky bottom-0 z-40 bg-black/95 backdrop-blur-2xl hairline-border-t px-4 py-2.5 flex items-center justify-around">
-      <button onclick="switchMainScreen('pay')" id="navDockPay" class="flex flex-col items-center gap-1 text-white btn-press">
+    <nav class="sticky bottom-0 z-40 bg-black/90 backdrop-blur-2xl hairline-border-t px-4 py-2 flex items-center justify-around">
+      <button onclick="switchMainScreen('pay')" id="navDockPay" class="relative flex flex-col items-center gap-1 text-white btn-press transition-all">
         <i data-lucide="zap" class="w-5 h-5 stroke-[2.5]"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">PAY</span>
+        <span class="dock-dot w-1 h-1 rounded-full bg-white shadow-[0_0_6px_#ffffff]"></span>
       </button>
 
-      <button onclick="switchMainScreen('cards')" id="navDockCards" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="switchMainScreen('cards')" id="navDockCards" class="relative flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition-all btn-press">
         <i data-lucide="credit-card" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">CARDS</span>
+        <span class="dock-dot w-1 h-1 rounded-full bg-white shadow-[0_0_6px_#ffffff] hidden"></span>
       </button>
 
-      <button onclick="switchMainScreen('ledger')" id="navDockLedger" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="switchMainScreen('ledger')" id="navDockLedger" class="relative flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition-all btn-press">
         <i data-lucide="receipt" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">ACTIVITY</span>
+        <span class="dock-dot w-1 h-1 rounded-full bg-white shadow-[0_0_6px_#ffffff] hidden"></span>
       </button>
 
-      <button onclick="openAuthModal()" id="navDockAccount" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="openAuthModal()" id="navDockAccount" class="relative flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition-all btn-press">
         <i data-lucide="user" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">ACCOUNT</span>
       </button>
 
-      <button onclick="openFirebaseConfigModal()" id="navDockCloud" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press">
+      <button onclick="openFirebaseConfigModal()" id="navDockCloud" class="relative flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition-all btn-press">
         <i data-lucide="database" class="w-5 h-5"></i>
         <span class="text-[9px] font-bold font-mono tracking-wider">CLOUD</span>
       </button>
@@ -424,6 +477,7 @@
   <!-- ================= BOTTOM SHEET: RECIPIENT UPI SETUP MODAL ================= -->
   <div id="upiSetupModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       
       <button id="upiSetupCloseBtn" onclick="closeUpiSetupModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border hidden">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -558,6 +612,7 @@
   <!-- ================= BOTTOM SHEET: ADD NEW CARD MODAL ================= -->
   <div id="addCardModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       <button onclick="closeAddCardModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
@@ -648,6 +703,7 @@
   <!-- ================= BOTTOM SHEET: NATIVE PAYMENT HUB MODAL ================= -->
   <div id="nativePaymentModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       <button onclick="closeNativePaymentModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
@@ -776,6 +832,7 @@
   <!-- ================= BOTTOM SHEET: 3D-SECURE BANK OTP MODAL ================= -->
   <div id="cardOtpModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       <button onclick="closeCardOtpModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
@@ -820,6 +877,7 @@
   <!-- ================= BOTTOM SHEET: PAYMENT SUCCESS CELEBRATION ================= -->
   <div id="paymentSuccessModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 text-center animate-in zoom-in-95 duration-200">
+      <div class="sheet-grab-bar"></div>
       
       <!-- White Success Icon -->
       <div class="w-16 h-16 rounded-3xl bg-white text-black mx-auto flex items-center justify-center font-black text-2xl shadow-2xl">
@@ -869,6 +927,7 @@
   <!-- ================= BOTTOM SHEET: SCAN & PAY MODAL ================= -->
   <div id="paymentModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       
       <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -938,6 +997,7 @@
   <!-- ================= BOTTOM SHEET: AUTHENTICATION MODAL ================= -->
   <div id="authModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       
       <button id="modalCloseBtn" onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border hidden">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -1046,6 +1106,7 @@
   <!-- ================= BOTTOM SHEET: FIREBASE & GOOGLE CONFIG ================= -->
   <div id="firebaseConfigModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      <div class="sheet-grab-bar"></div>
       
       <button onclick="closeFirebaseConfigModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
@@ -1658,19 +1719,35 @@
 
       // Reset bottom dock buttons
       [dockPay, dockCards, dockLedger].forEach(d => {
-        if (d) d.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition btn-press";
+        if (d) {
+          d.className = "relative flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition-all btn-press";
+          const dot = d.querySelector('.dock-dot');
+          if (dot) dot.classList.add('hidden');
+        }
       });
 
       if (screen === 'pay') {
         if (scrPay) scrPay.classList.remove('hidden');
-        if (dockPay) dockPay.className = "flex flex-col items-center gap-1 text-white btn-press";
+        if (dockPay) {
+          dockPay.className = "relative flex flex-col items-center gap-1 text-white transition-all btn-press";
+          const dot = dockPay.querySelector('.dock-dot');
+          if (dot) dot.classList.remove('hidden');
+        }
       } else if (screen === 'cards') {
         if (scrCards) scrCards.classList.remove('hidden');
-        if (dockCards) dockCards.className = "flex flex-col items-center gap-1 text-white btn-press";
+        if (dockCards) {
+          dockCards.className = "relative flex flex-col items-center gap-1 text-white transition-all btn-press";
+          const dot = dockCards.querySelector('.dock-dot');
+          if (dot) dot.classList.remove('hidden');
+        }
         renderSavedCards();
       } else {
         if (scrLedger) scrLedger.classList.remove('hidden');
-        if (dockLedger) dockLedger.className = "flex flex-col items-center gap-1 text-white btn-press";
+        if (dockLedger) {
+          dockLedger.className = "relative flex flex-col items-center gap-1 text-white transition-all btn-press";
+          const dot = dockLedger.querySelector('.dock-dot');
+          if (dot) dot.classList.remove('hidden');
+        }
         renderLedger();
       }
       lucide.createIcons();
@@ -1804,6 +1881,16 @@
       const amt = parseFloat(document.getElementById('payAmount').value) || 0;
       const btnLabel = document.getElementById('btnAmountLabel');
       if (btnLabel) btnLabel.textContent = amt.toFixed(2);
+
+      [100, 500, 1000, 2000].forEach(preset => {
+        const btn = document.getElementById(`quickAmtBtn_${preset}`);
+        if (!btn) return;
+        if (Math.abs(amt - preset) < 0.01) {
+          btn.className = "px-4 py-1.5 rounded-full bg-white text-black text-xs font-mono font-black shadow-md transition-all scale-105 btn-press";
+        } else {
+          btn.className = "px-4 py-1.5 rounded-full bg-[#141417] hairline-border text-xs font-mono font-bold text-neutral-300 hover:text-white hover:border-neutral-500 transition-all btn-press";
+        }
+      });
     }
     document.getElementById('payAmount').addEventListener('input', updateAmountDisplays);
 
@@ -2710,6 +2797,8 @@
         if (delta > maxTranslate) delta = maxTranslate;
 
         thumb.style.transform = `translateX(${delta}px)`;
+        const fill = document.getElementById('sliderFill');
+        if (fill) fill.style.width = `${delta + thumb.clientWidth + 6}px`;
 
         if (delta >= maxTranslate * 0.92) {
           isDragging = false;
@@ -2727,6 +2816,11 @@
       function resetSlider() {
         thumb.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
         thumb.style.transform = 'translateX(0px)';
+        const fill = document.getElementById('sliderFill');
+        if (fill) {
+          fill.style.transition = 'width 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+          fill.style.width = '0px';
+        }
       }
 
       thumb.addEventListener('mousedown', onStart);
