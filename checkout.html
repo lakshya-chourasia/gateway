@@ -126,45 +126,28 @@
       <!-- ================= SCREEN 1: PAYMENT TERMINAL ================= -->
       <section id="screenPay" class="space-y-4">
 
-        <!-- Recipient Header Card (Fintech Style) -->
-        <div class="bg-[#0c0c0e] hairline-border rounded-3xl p-4 flex items-center justify-between">
+        <!-- Recipient Header Card (Fintech Style - Dynamic & Clickable) -->
+        <div id="recipientHeaderCard" onclick="openUpiSetupModal(false)" class="bg-[#0c0c0e] hairline-border rounded-3xl p-4 flex items-center justify-between cursor-pointer hover:border-neutral-700 transition">
           <div class="flex items-center space-x-3.5 overflow-hidden">
-            <div class="w-12 h-12 rounded-2xl bg-[#18181c] hairline-border flex items-center justify-center text-white font-black text-sm tracking-wider shadow-inner shrink-0">
-              <span id="payeeMonogram">PO</span>
+            <div id="payeeMonogramBox" class="w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0 transition-colors">
+              <span id="payeeMonogram">+</span>
             </div>
             <div class="overflow-hidden">
               <div class="flex items-center space-x-1.5">
-                <span id="targetNameDisplay" class="text-sm font-extrabold text-white truncate tracking-tight">PayOne Store</span>
-                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-white shrink-0 fill-white/20"></i>
+                <span id="targetNameDisplay" class="text-sm font-extrabold text-white truncate tracking-tight">Tap to Set Recipient</span>
+                <i id="targetVerifiedIcon" data-lucide="check-circle-2" class="w-3.5 h-3.5 text-white shrink-0 fill-white/20 hidden"></i>
               </div>
               <div class="flex items-center space-x-1 text-[11px] font-mono text-neutral-400 truncate mt-0.5">
                 <span>UPI ID:</span>
-                <span id="cardPayeeDisplay" class="text-neutral-200">payone@upi</span>
+                <span id="cardPayeeDisplay" class="text-neutral-500 italic">Not configured</span>
               </div>
             </div>
           </div>
-          <button onclick="togglePayeeConfig()" class="px-2.5 py-1.5 rounded-xl bg-[#141417] hairline-border text-[10px] font-mono uppercase tracking-wider text-neutral-400 hover:text-white transition btn-press">
-            CHANGE
+          <button id="recipientActionBtn" onclick="event.stopPropagation(); openUpiSetupModal(false);" class="px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press">
+            SET UPI
           </button>
         </div>
 
-        <!-- Hidden Recipient Config Drawer -->
-        <div id="payeeConfigDrawer" class="hidden bg-[#0c0c0e] hairline-border rounded-2xl p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-          <div class="text-[10px] font-mono text-neutral-400 uppercase tracking-widest font-bold">CONFIGURE RECIPIENT</div>
-          <div>
-            <label class="block text-[10px] font-mono text-neutral-500 mb-1">TARGET UPI VPA</label>
-            <input type="text" id="targetVpa" value="payone@upi" placeholder="merchant@upi"
-              class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-          </div>
-          <div>
-            <label class="block text-[10px] font-mono text-neutral-500 mb-1">PAYEE LEGAL NAME</label>
-            <input type="text" id="targetName" value="PayOne Store" placeholder="Store Name"
-              class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-          </div>
-          <button onclick="saveTargetPayee()" class="w-full py-2.5 bg-white text-black font-extrabold text-xs rounded-xl uppercase font-mono tracking-wider hover:bg-neutral-200 transition btn-press">
-            SAVE RECIPIENT
-          </button>
-        </div>
 
         <!-- HERO AMOUNT CARD (BOLD OVERSIZED FINTECH TYPOGRAPHY) -->
         <div class="bg-[#0c0c0e] hairline-border rounded-3xl p-6 text-center space-y-3 relative overflow-hidden">
@@ -287,6 +270,73 @@
   </div>
 
 
+  <!-- ================= BOTTOM SHEET: RECIPIENT UPI SETUP MODAL ================= -->
+  <div id="upiSetupModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+      
+      <button id="upiSetupCloseBtn" onclick="closeUpiSetupModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border hidden">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="space-y-1.5 pt-1">
+        <div class="w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center mb-2 shadow-lg">
+          <i data-lucide="qr-code" class="w-5 h-5 stroke-[2.5]"></i>
+        </div>
+        <div class="text-[9px] font-mono text-neutral-400 uppercase tracking-[0.25em] font-bold">SETUP REQUIRED</div>
+        <h3 class="text-xl font-black text-white tracking-tight">Set Recipient UPI ID</h3>
+        <p class="text-xs text-neutral-400 font-normal leading-relaxed">
+          PayOne has no preset UPI. Enter your UPI ID (VPA) to receive direct P2P payments with 0% intermediary fee.
+        </p>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="space-y-3 pt-1">
+        <div>
+          <label class="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1 font-bold">
+            RECIPIENT UPI ID (VPA) <span class="text-neutral-200">*</span>
+          </label>
+          <input type="text" id="setupUpiInput" placeholder="yourname@okhdfcbank" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-3 rounded-xl font-mono text-xs tracking-wider outline-none transition">
+          
+          <!-- Quick Handle Pills -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button type="button" onclick="appendUpiHandle('@okhdfcbank')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@okhdfcbank</button>
+            <button type="button" onclick="appendUpiHandle('@okaxis')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@okaxis</button>
+            <button type="button" onclick="appendUpiHandle('@ybl')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@ybl</button>
+            <button type="button" onclick="appendUpiHandle('@ibl')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@ibl</button>
+            <button type="button" onclick="appendUpiHandle('@paytm')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@paytm</button>
+            <button type="button" onclick="appendUpiHandle('@upi')" class="px-2 py-1 rounded-lg bg-[#141417] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white hover:border-neutral-500 transition">@upi</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-mono text-neutral-400 uppercase tracking-wider mb-1 font-bold">
+            PAYEE / BUSINESS NAME (OPTIONAL)
+          </label>
+          <input type="text" id="setupNameInput" placeholder="e.g. My Store"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3.5 py-3 rounded-xl font-mono text-xs outline-none transition">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="pt-2 space-y-2">
+        <button onclick="submitUpiSetup()" class="w-full h-12 bg-white text-black font-black text-xs rounded-xl uppercase font-mono tracking-wider hover:bg-neutral-200 transition shadow flex items-center justify-center gap-2 btn-press">
+          <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i> CONFIRM &amp; ACTIVATE UPI
+        </button>
+        <button id="clearUpiBtn" onclick="clearUpiSetup()" class="w-full py-2 text-[10px] font-mono text-neutral-500 hover:text-white uppercase tracking-wider transition hidden">
+          CLEAR RECIPIENT UPI
+        </button>
+      </div>
+
+      <!-- Micro Note -->
+      <div class="text-[10px] font-mono text-neutral-600 text-center pt-1">
+        Payments settle directly to this VPA with zero platform intermediary.
+      </div>
+    </div>
+  </div>
+
+
   <!-- ================= BOTTOM SHEET: SCAN & PAY MODAL ================= -->
   <div id="paymentModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
@@ -299,7 +349,7 @@
       <div class="text-center pt-1">
         <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 block font-bold">TRANSFER DETAILS</span>
         <div class="text-3xl font-black font-sans text-white mt-1">₹<span id="modalAmount">500.00</span></div>
-        <div class="text-[11px] text-neutral-400 font-mono mt-0.5">To: <span id="modalPayee" class="text-white font-bold">payone@upi</span></div>
+        <div class="text-[11px] text-neutral-400 font-mono mt-0.5">To: <span id="modalPayee" class="text-white font-bold">—</span></div>
       </div>
 
       <!-- High-Contrast Monochrome QR Display -->
@@ -1001,25 +1051,115 @@
       lucide.createIcons();
     }
 
-    function togglePayeeConfig() {
-      const drawer = document.getElementById('payeeConfigDrawer');
-      drawer.classList.toggle('hidden');
+    // Recipient UPI Configuration State (NO PRESET UPI)
+    let recipientVpa = localStorage.getItem('payone_recipient_vpa') || '';
+    let recipientName = localStorage.getItem('payone_recipient_name') || '';
+
+    function syncRecipientUI() {
+      const vpaDisplay = document.getElementById('cardPayeeDisplay');
+      const nameDisplay = document.getElementById('targetNameDisplay');
+      const verifiedIcon = document.getElementById('targetVerifiedIcon');
+      const monoDisplay = document.getElementById('payeeMonogram');
+      const monoBox = document.getElementById('payeeMonogramBox');
+      const actionBtn = document.getElementById('recipientActionBtn');
+      const clearBtn = document.getElementById('clearUpiBtn');
+      const closeBtn = document.getElementById('upiSetupCloseBtn');
+
+      if (recipientVpa) {
+        vpaDisplay.textContent = recipientVpa;
+        vpaDisplay.className = 'text-neutral-200 font-mono';
+        nameDisplay.textContent = recipientName || recipientVpa.split('@')[0];
+        if (verifiedIcon) verifiedIcon.classList.remove('hidden');
+        const mono = (recipientName || recipientVpa).substring(0, 2).toUpperCase();
+        monoDisplay.textContent = mono;
+        monoBox.className = "w-12 h-12 rounded-2xl bg-[#18181c] hairline-border flex items-center justify-center text-white font-black text-sm tracking-wider shadow-inner shrink-0";
+        actionBtn.textContent = 'CHANGE';
+        actionBtn.className = "px-3 py-1.5 rounded-xl bg-[#141417] hairline-border text-[10px] font-mono uppercase tracking-wider text-neutral-300 hover:text-white transition btn-press";
+        if (clearBtn) clearBtn.classList.remove('hidden');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+      } else {
+        vpaDisplay.textContent = 'Not configured';
+        vpaDisplay.className = 'text-neutral-500 italic font-mono';
+        nameDisplay.textContent = 'Tap to Set Recipient';
+        if (verifiedIcon) verifiedIcon.classList.add('hidden');
+        monoDisplay.textContent = '+';
+        monoBox.className = "w-12 h-12 rounded-2xl bg-[#141417] border border-dashed border-neutral-700 flex items-center justify-center text-neutral-400 font-black text-lg tracking-wider shrink-0";
+        actionBtn.textContent = 'SET UPI';
+        actionBtn.className = "px-3 py-1.5 rounded-xl bg-white text-black font-extrabold text-[10px] font-mono uppercase tracking-wider hover:bg-neutral-200 transition btn-press";
+        if (clearBtn) clearBtn.classList.add('hidden');
+        if (closeBtn) closeBtn.classList.add('hidden');
+      }
       lucide.createIcons();
     }
 
-    function saveTargetPayee() {
-      const vpa = document.getElementById('targetVpa').value.trim();
-      const name = document.getElementById('targetName').value.trim();
-      if (!vpa || !vpa.includes('@')) {
-        showToast("Please enter a valid UPI VPA.");
+    function openUpiSetupModal(isMandatory = false) {
+      const modal = document.getElementById('upiSetupModal');
+      const input = document.getElementById('setupUpiInput');
+      const nameInput = document.getElementById('setupNameInput');
+      const closeBtn = document.getElementById('upiSetupCloseBtn');
+
+      input.value = recipientVpa || '';
+      nameInput.value = recipientName || '';
+
+      if (isMandatory && !recipientVpa) {
+        closeBtn.classList.add('hidden');
+      } else {
+        closeBtn.classList.remove('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+      setTimeout(() => input.focus(), 150);
+    }
+
+    function closeUpiSetupModal() {
+      if (!recipientVpa) {
+        showToast("Please enter a recipient UPI ID first.");
         return;
       }
-      document.getElementById('cardPayeeDisplay').textContent = vpa;
-      document.getElementById('targetNameDisplay').textContent = name || 'PayOne Store';
-      const monogram = (name || 'PO').substring(0, 2).toUpperCase();
-      document.getElementById('payeeMonogram').textContent = monogram;
-      document.getElementById('payeeConfigDrawer').classList.add('hidden');
-      showToast("Recipient updated.");
+      document.getElementById('upiSetupModal').classList.add('hidden');
+    }
+
+    function appendUpiHandle(handle) {
+      const input = document.getElementById('setupUpiInput');
+      let val = input.value.trim();
+      if (val.includes('@')) {
+        val = val.split('@')[0];
+      }
+      if (!val) val = 'merchant';
+      input.value = val + handle;
+      input.focus();
+    }
+
+    function submitUpiSetup() {
+      const upi = document.getElementById('setupUpiInput').value.trim();
+      const name = document.getElementById('setupNameInput').value.trim();
+
+      if (!upi || !upi.includes('@') || upi.length < 5) {
+        showToast("Please enter a valid UPI ID (e.g. name@bank)");
+        return;
+      }
+
+      recipientVpa = upi;
+      recipientName = name || upi.split('@')[0];
+
+      localStorage.setItem('payone_recipient_vpa', recipientVpa);
+      localStorage.setItem('payone_recipient_name', recipientName);
+
+      syncRecipientUI();
+      document.getElementById('upiSetupModal').classList.add('hidden');
+      showToast("Recipient UPI set to " + recipientVpa);
+    }
+
+    function clearUpiSetup() {
+      localStorage.removeItem('payone_recipient_vpa');
+      localStorage.removeItem('payone_recipient_name');
+      recipientVpa = '';
+      recipientName = '';
+      document.getElementById('setupUpiInput').value = '';
+      document.getElementById('setupNameInput').value = '';
+      syncRecipientUI();
+      showToast("Recipient UPI cleared.");
     }
 
     function setAmount(val) {
@@ -1034,8 +1174,11 @@
     document.getElementById('payAmount').addEventListener('input', updateAmountDisplays);
 
     function constructUpiUri() {
-      const vpa = document.getElementById('targetVpa').value.trim() || 'payone@upi';
-      const name = document.getElementById('targetName').value.trim() || 'PayOne Store';
+      if (!recipientVpa) {
+        return null;
+      }
+      const vpa = recipientVpa;
+      const name = recipientName || 'PayOne Merchant';
       const amount = parseFloat(document.getElementById('payAmount').value) || 0;
       const note = document.getElementById('payNote').value.trim() || 'Payment via PayOne';
       const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
@@ -1052,6 +1195,12 @@
     }
 
     function launchPaymentModal() {
+      if (!recipientVpa) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
+
       const amount = parseFloat(document.getElementById('payAmount').value) || 0;
       if (amount <= 0) {
         showToast("Please enter an amount greater than 0");
@@ -1059,8 +1208,14 @@
       }
 
       currentActiveUpiUri = constructUpiUri();
+      if (!currentActiveUpiUri) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
+
       document.getElementById('modalAmount').textContent = amount.toFixed(2);
-      document.getElementById('modalPayee').textContent = document.getElementById('targetVpa').value.trim() || 'payone@upi';
+      document.getElementById('modalPayee').textContent = recipientVpa;
 
       const container = document.getElementById('qrContainer');
       container.innerHTML = '';
@@ -1082,12 +1237,24 @@
     }
 
     function triggerUniversalUpiIntent() {
+      if (!recipientVpa) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
       if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
-      window.location.href = currentActiveUpiUri;
+      if (currentActiveUpiUri) window.location.href = currentActiveUpiUri;
     }
 
     function triggerAppIntent(appType) {
+      if (!recipientVpa) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
       if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
+      if (!currentActiveUpiUri) return;
+
       const rawParams = currentActiveUpiUri.replace('upi://pay?', '');
       let intentUri = currentActiveUpiUri;
 
@@ -1101,12 +1268,19 @@
 
       window.location.href = intentUri;
       setTimeout(() => {
-        window.location.href = currentActiveUpiUri;
+        if (currentActiveUpiUri) window.location.href = currentActiveUpiUri;
       }, 750);
     }
 
     function copyUpiPaymentLink() {
+      if (!recipientVpa) {
+        showToast("Set your recipient UPI ID first");
+        openUpiSetupModal(true);
+        return;
+      }
       if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
+      if (!currentActiveUpiUri) return;
+
       navigator.clipboard.writeText(currentActiveUpiUri).then(() => {
         showToast("UPI payment link copied.");
       }).catch(() => {
@@ -1175,7 +1349,7 @@
                 <span class="text-xs font-bold font-mono text-white tracking-wider">${item.utr || 'DIRECT-P2P'}</span>
                 <span class="text-[8px] font-mono px-1.5 py-0.2 rounded bg-neutral-900 text-neutral-400 hairline-border">${item.method || 'UPI'}</span>
               </div>
-              <div class="text-[10px] font-mono text-neutral-500">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${item.payee || 'payone@upi'}</div>
+              <div class="text-[10px] font-mono text-neutral-500">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${item.payee || recipientVpa || 'UPI'}</div>
             </div>
           </div>
           <div class="flex items-center space-x-3 text-right">
@@ -1255,6 +1429,14 @@
       lucide.createIcons();
       setupSlider();
       updateAmountDisplays();
+      syncRecipientUI();
+
+      // Mandatory initial setup: Prompt for recipient UPI first if none is configured
+      if (!recipientVpa) {
+        setTimeout(() => {
+          openUpiSetupModal(true);
+        }, 250);
+      }
     });
   </script>
 </body>
