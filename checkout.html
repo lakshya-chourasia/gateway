@@ -2,8 +2,8 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayOne Sovereign Pay - Scan &amp; Pay Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PayOne — Sovereign Pay</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- QRCode.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -15,629 +15,459 @@
       theme: {
         extend: {
           colors: {
-            cred: {
-              black: '#0a0a0c',
-              dark: '#111114',
-              card: '#16161a',
-              border: '#23232a',
-              accent: '#00e599',
-              gold: '#ffd700',
-              muted: '#71717a'
+            app: {
+              black: '#000000',
+              bg: '#050507',
+              card: '#0c0c0e',
+              elevated: '#141417',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderFocus: 'rgba(255, 255, 255, 0.25)',
+              text: '#ffffff',
+              muted: '#8e8e93',
+              subtle: '#52525b'
             }
           },
           fontFamily: {
-            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
-            sans: ['Inter', 'sans-serif']
+            mono: ['SF Mono', 'ui-monospace', 'Menlo', 'monospace'],
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Inter', 'sans-serif']
           }
         }
       }
     }
   </script>
   <style>
-    body {
-      background-color: #0a0a0c;
-      color: #f4f4f5;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    :root {
+      color-scheme: dark;
     }
-    .cred-border {
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .hairline-border {
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .cred-glow {
-      box-shadow: 0 0 25px -5px rgba(0, 229, 153, 0.15);
+    .hairline-border-b {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .hairline-border-t {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
     .slider-thumb {
       touch-action: pan-x;
     }
     /* Hide scrollbars */
     ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
+      display: none;
     }
-    ::-webkit-scrollbar-track {
-      background: #0a0a0c;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #23232a;
-      border-radius: 2px;
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-cred-accent selection:text-black">
+<body class="bg-black text-white min-h-screen flex flex-col items-center justify-start antialiased selection:bg-white selection:text-black">
 
-  <!-- TOP APP BAR -->
-  <header class="w-full border-b border-cred-border bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-cred-card cred-border flex items-center justify-center text-cred-accent">
-          <i data-lucide="zap" class="w-5 h-5 fill-cred-accent"></i>
+  <!-- MOBILE SHELL CONTAINER (Standard 420px max width for authentic mobile feel) -->
+  <div class="w-full max-w-md min-h-screen flex flex-col justify-between relative bg-[#050507] border-x border-neutral-900 shadow-2xl">
+
+    <!-- TOP MOBILE APP BAR -->
+    <header class="sticky top-0 z-40 bg-black/85 backdrop-blur-xl hairline-border-b px-5 h-14 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-tighter">
+          P1
         </div>
         <div>
-          <span class="text-sm font-black tracking-[0.25em] uppercase text-white">PAYONE</span>
-          <span class="text-[10px] block text-cred-accent tracking-widest font-mono font-medium">SOVEREIGN SCAN &amp; PAY</span>
+          <span class="text-xs font-bold tracking-[0.2em] uppercase text-white block">PAYONE</span>
         </div>
       </div>
 
-      <!-- Auth Controls & User Pill -->
-      <div class="flex items-center space-x-2 sm:space-x-3">
-        <!-- Firebase Firestore Status & Config Button -->
-        <button id="firebaseConfigBtn" onclick="openFirebaseConfigModal()" title="Firebase Authentication & Cloud Firestore Settings"
-          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-cred-card cred-border text-neutral-300 hover:text-white hover:border-amber-500/50 transition text-xs font-mono group">
-          <svg class="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4.6 17.8L7.3 2.9c.1-.4.5-.6.9-.4l4 4.5 2.8-5.3c.2-.4.7-.5 1.1-.2.1.1.2.2.3.4l2.2 4.4 3.7-7c.2-.4.7-.6 1.1-.4.3.2.5.5.4.9l-4 18.9-6.3 3.6c-.4.2-.8.2-1.2 0L4.6 17.8z"/>
-          </svg>
-          <span id="headerSyncText" class="text-[10px] uppercase tracking-wider text-neutral-400 group-hover:text-neutral-200">FIRESTORE</span>
-          <span id="headerSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <!-- Cloud Sync & Account Buttons -->
+      <div class="flex items-center space-x-2">
+        <button id="headerSyncBtn" onclick="openFirebaseConfigModal()" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#111113] hairline-border text-[10px] font-mono text-neutral-400 hover:text-white transition">
+          <span id="headerSyncDot" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+          <span id="headerSyncText" class="tracking-wider">FIRESTORE</span>
         </button>
 
-        <div id="authPill" class="flex items-center space-x-2 bg-cred-card cred-border px-3 py-1.5 rounded-full cursor-pointer hover:border-neutral-600 transition" onclick="openAuthModal()">
-          <div id="userAvatarDot" class="w-2 h-2 rounded-full bg-amber-400"></div>
-          <span id="authStatusText" class="text-xs font-mono tracking-wider text-neutral-300">GUEST MEMBER</span>
-        </div>
-        <button id="logoutBtn" onclick="handleSignOut()" class="hidden px-2.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs transition" title="Sign Out">
-          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        <button id="authPill" onclick="openAuthModal()" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#111113] hairline-border text-[10px] font-mono text-neutral-300 hover:text-white transition">
+          <span id="userAvatarDot" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+          <span id="authStatusText" class="truncate max-w-[80px]">MEMBER</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SEGMENTED SCREEN SELECTOR -->
+    <div class="px-5 pt-3">
+      <div class="flex p-0.5 bg-[#111113] hairline-border rounded-xl text-[11px] font-mono">
+        <button id="navTabPay" onclick="switchMainScreen('pay')" class="flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition">
+          TERMINAL
+        </button>
+        <button id="navTabLedger" onclick="switchMainScreen('ledger')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">
+          LEDGER (<span id="tabCountBadge">0</span>)
         </button>
       </div>
     </div>
-  </header>
 
-  <!-- MAIN VIEWPORT -->
-  <main class="max-w-6xl mx-auto w-full px-4 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-    
-    <!-- LEFT: RECIPIENT SETTINGS & LUXURY CARD (5 cols) -->
-    <div class="lg:col-span-5 space-y-6">
-      
-      <!-- Holographic CRED Member Card -->
-      <div class="relative w-full aspect-[1.6/1] rounded-2xl p-6 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#18181c] via-[#121215] to-[#0a0a0c] cred-border cred-glow group">
-        <div class="absolute -top-12 -right-12 w-48 h-48 bg-cred-accent/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+    <!-- MAIN BODY CONTENT -->
+    <main class="flex-1 px-5 py-4 pb-20 space-y-4">
 
-        <div class="flex justify-between items-start z-10">
+      <!-- ================= SCREEN 1: TERMINAL & SLIDE TO PAY ================= -->
+      <section id="screenPay" class="space-y-4">
+
+        <!-- Target Payee Minimalist Card -->
+        <div class="bg-[#0c0c0e] hairline-border rounded-2xl p-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="w-10 h-10 rounded-xl bg-[#141417] hairline-border flex items-center justify-center text-white shrink-0">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-wider">PAYEE RECIPIENT</div>
+              <div id="cardPayeeDisplay" class="text-sm font-semibold text-white truncate">payone@upi</div>
+              <div id="targetNameDisplay" class="text-[11px] text-neutral-400 truncate">PayOne Sovereign Merchant</div>
+            </div>
+          </div>
+          <button onclick="togglePayeeConfig()" class="p-2 rounded-lg bg-[#141417] hairline-border text-neutral-400 hover:text-white transition" title="Edit Payee VPA">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Hidden Payee Config Drawer (Toggleable) -->
+        <div id="payeeConfigDrawer" class="hidden bg-[#0c0c0e] hairline-border rounded-2xl p-4 space-y-3">
+          <div class="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">CONFIGURE TARGET VPA</div>
           <div>
-            <div class="text-[9px] tracking-[0.3em] font-mono uppercase text-cred-muted">PAYONE PRIVILEGE TIER</div>
-            <div id="cardHolderName" class="text-sm font-semibold tracking-wider text-white mt-0.5">PAYONE CLUB</div>
+            <label class="block text-[10px] font-mono text-neutral-500 mb-1">UPI VPA</label>
+            <input type="text" id="targetVpa" value="payone@upi" placeholder="merchant@upi"
+              class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2 rounded-xl font-mono text-xs outline-none transition">
           </div>
-          <div class="flex items-center space-x-1.5">
-            <span class="w-2 h-2 rounded-full bg-cred-accent animate-pulse"></span>
-            <span class="text-[10px] font-mono tracking-wider text-cred-accent uppercase">DIRECT P2P</span>
-          </div>
-        </div>
-
-        <!-- EMV Chip and contactless graphic -->
-        <div class="flex items-center space-x-3 z-10">
-          <div class="w-10 h-7 rounded bg-gradient-to-tr from-amber-200 via-amber-400 to-yellow-600 p-0.5 shadow-inner flex items-center justify-center">
-            <div class="w-full h-full border border-black/40 rounded-[2px] grid grid-cols-2 gap-0.5 p-0.5 opacity-70">
-              <div class="bg-black/20"></div><div class="bg-black/20"></div>
-              <div class="bg-black/20"></div><div class="bg-black/20"></div>
-            </div>
-          </div>
-          <i data-lucide="rss" class="w-4 h-4 text-neutral-500 rotate-90"></i>
-        </div>
-
-        <div class="z-10">
-          <div class="text-[10px] font-mono text-cred-muted uppercase tracking-wider">TARGET PAYEE VPA</div>
-          <div id="cardPayeeDisplay" class="font-mono text-sm tracking-wider text-neutral-200 truncate mt-0.5">payone@upi</div>
-          <div class="flex justify-between items-end mt-2 pt-2 border-t border-white/5">
-            <div class="text-[9px] font-mono text-neutral-500 uppercase">ZERO CONVENIENCE FEE</div>
-            <div class="text-[9px] font-mono text-neutral-400 uppercase">NPCI SPECIFIED</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recipient VPA Config Box -->
-      <div class="bg-cred-card cred-border rounded-2xl p-5 space-y-4">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-medium text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
-            <i data-lucide="settings" class="w-3.5 h-3.5 text-cred-accent"></i> PAYEE TARGET CONFIG
-          </span>
-          <span id="vpaValidationBadge" class="text-[10px] font-mono px-2 py-0.5 rounded border border-neutral-800 bg-neutral-900 text-neutral-400">UNCHECKED</span>
-        </div>
-
-        <div class="space-y-3">
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="block text-[11px] font-mono text-neutral-400 uppercase">Payee UPI VPA (Target Address)</label>
-              <span id="vpaProviderInfo" class="text-[10px] font-mono text-cred-accent truncate max-w-[200px]"></span>
-            </div>
-            <div class="relative">
-              <input type="text" id="targetVpa" value="payone@upi" placeholder="e.g. 9876543210@paytm, user@ybl, or user@ikwik" 
-                class="w-full bg-[#0d0d10] border border-cred-border focus:border-cred-accent text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition pr-20">
-              <button onclick="saveTargetPayee()" class="absolute right-2 top-2 px-2.5 py-1 text-[10px] font-mono uppercase bg-neutral-800 text-neutral-200 hover:text-white rounded border border-neutral-700 transition">
-                Apply
-              </button>
-            </div>
-            <!-- Quick PSP Handle suggestions -->
-            <div class="flex flex-wrap gap-1.5 mt-2">
-              <span class="text-[9px] font-mono text-neutral-500 self-center uppercase mr-1">Quick PSPs:</span>
-              <button type="button" onclick="appendPspHandle('paytm')" class="text-[9px] font-mono px-2 py-0.5 rounded bg-sky-950/30 border border-sky-800/50 text-sky-400 hover:text-white hover:border-sky-500 transition">@paytm</button>
-              <button type="button" onclick="appendPspHandle('ybl')" class="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-950/30 border border-purple-800/50 text-purple-400 hover:text-white hover:border-purple-500 transition">@ybl (PhonePe)</button>
-              <button type="button" onclick="appendPspHandle('ikwik')" class="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-950/30 border border-cyan-800/50 text-cyan-400 hover:text-white hover:border-cyan-500 transition">@ikwik (MobiKwik)</button>
-              <button type="button" onclick="appendPspHandle('okhdfcbank')" class="text-[9px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition">@okhdfcbank</button>
-              <button type="button" onclick="appendPspHandle('axisbank')" class="text-[9px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition">@axisbank</button>
-            </div>
+            <label class="block text-[10px] font-mono text-neutral-500 mb-1">STORE / PAYEE NAME</label>
+            <input type="text" id="targetName" value="PayOne" placeholder="Store Name"
+              class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2 rounded-xl font-mono text-xs outline-none transition">
           </div>
-
-          <div>
-            <label class="block text-[11px] font-mono text-neutral-400 uppercase mb-1">Payee Legal Name (Scan &amp; Pay Display Name)</label>
-            <input type="text" id="targetName" value="PayOne" placeholder="Store or Individual Name (e.g. PayOne)" 
-              class="w-full bg-[#0d0d10] border border-cred-border focus:border-cred-accent text-white px-3.5 py-2 rounded-xl font-mono text-xs outline-none transition">
-          </div>
+          <button onclick="saveTargetPayee()" class="w-full py-2 bg-white text-black font-semibold text-xs rounded-xl uppercase font-mono tracking-wider hover:bg-neutral-200 transition">
+            SAVE TARGET
+          </button>
         </div>
-      </div>
 
-      <!-- Lifetime Stats Card -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-cred-card cred-border rounded-xl p-4">
-          <div class="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">LIFETIME VOLUME</div>
-          <div id="statTotalVol" class="text-xl font-mono font-bold text-white mt-1">₹0.00</div>
-          <div class="text-[9px] text-cred-accent font-mono mt-1 flex items-center gap-1">
-            <i data-lucide="shield-check" class="w-3 h-3"></i> 100% P2P ZERO FEE
+        <!-- HERO AMOUNT CARD -->
+        <div class="bg-[#0c0c0e] hairline-border rounded-2xl p-6 text-center space-y-4">
+          <span class="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500">TRANSFER AMOUNT</span>
+          
+          <div class="flex items-center justify-center">
+            <span class="text-3xl font-light text-neutral-500 mr-2">₹</span>
+            <input type="number" id="payAmount" value="500" min="1" step="any"
+              class="bg-transparent text-4xl sm:text-5xl font-mono font-extrabold text-white text-center outline-none w-48 tracking-tight">
+          </div>
+
+          <!-- Quick Amount Chips -->
+          <div class="flex items-center justify-center gap-2 pt-1">
+            <button onclick="setAmount(100)" class="px-3 py-1 rounded-full bg-[#141417] hairline-border text-xs font-mono text-neutral-300 hover:text-white hover:border-neutral-500 transition">₹100</button>
+            <button onclick="setAmount(500)" class="px-3 py-1 rounded-full bg-[#141417] hairline-border text-xs font-mono text-neutral-300 hover:text-white hover:border-neutral-500 transition">₹500</button>
+            <button onclick="setAmount(1000)" class="px-3 py-1 rounded-full bg-[#141417] hairline-border text-xs font-mono text-neutral-300 hover:text-white hover:border-neutral-500 transition">₹1,000</button>
+            <button onclick="setAmount(2000)" class="px-3 py-1 rounded-full bg-[#141417] hairline-border text-xs font-mono text-neutral-300 hover:text-white hover:border-neutral-500 transition">₹2,000</button>
           </div>
         </div>
 
-        <div class="bg-cred-card cred-border rounded-xl p-4">
-          <div class="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">SETTLED PAYMENTS</div>
-          <div id="statCount" class="text-xl font-mono font-bold text-white mt-1">0</div>
-          <div class="text-[9px] text-neutral-400 font-mono mt-1">BANK DIRECT</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: PAYMENT TERMINAL & SLIDE-TO-PAY (7 cols) -->
-    <div class="lg:col-span-7 space-y-6">
-
-      <div class="bg-cred-card cred-border rounded-2xl p-6 relative">
-        <div class="flex items-center justify-between pb-4 border-b border-cred-border">
-          <div>
-            <h2 class="text-base font-bold tracking-tight text-white">PAYMENT TERMINAL</h2>
-            <p class="text-xs text-neutral-400 mt-0.5">Send direct real-world UPI payment to payee</p>
-          </div>
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-mono uppercase bg-emerald-950/60 border border-emerald-800/80 text-emerald-400">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> READY
-          </span>
+        <!-- Transaction Note -->
+        <div class="bg-[#0c0c0e] hairline-border rounded-2xl px-4 py-3 flex items-center space-x-3">
+          <i data-lucide="edit-3" class="w-4 h-4 text-neutral-500 shrink-0"></i>
+          <input type="text" id="payNote" value="Payment via PayOne" placeholder="Add an optional note"
+            class="bg-transparent text-xs font-mono text-white placeholder-neutral-600 outline-none w-full">
         </div>
 
-        <!-- Numeric Amount Input -->
-        <div class="mt-6">
-          <div class="text-center py-4 bg-[#0c0c0f] cred-border rounded-2xl relative">
-            <span class="text-xs font-mono uppercase tracking-widest text-neutral-500">ENTER AMOUNT</span>
-            <div class="flex items-center justify-center mt-2">
-              <span class="text-3xl font-mono text-neutral-500 mr-2">₹</span>
-              <input type="number" id="payAmount" value="1.00" min="1" step="any"
-                class="bg-transparent text-4xl lg:text-5xl font-mono font-extrabold text-white text-center outline-none w-48 focus:ring-0">
-            </div>
-            
-            <!-- Quick Chips -->
-            <div class="flex items-center justify-center space-x-2 mt-4">
-              <button onclick="setAmount(1)" class="px-3 py-1 rounded-full bg-neutral-900 cred-border text-xs font-mono text-neutral-300 hover:border-neutral-500 transition">₹1</button>
-              <button onclick="setAmount(10)" class="px-3 py-1 rounded-full bg-neutral-900 cred-border text-xs font-mono text-neutral-300 hover:border-neutral-500 transition">₹10</button>
-              <button onclick="setAmount(100)" class="px-3 py-1 rounded-full bg-neutral-900 cred-border text-xs font-mono text-neutral-300 hover:border-neutral-500 transition">₹100</button>
-              <button onclick="setAmount(500)" class="px-3 py-1 rounded-full bg-neutral-900 cred-border text-xs font-mono text-neutral-300 hover:border-neutral-500 transition">₹500</button>
-              <button onclick="setAmount(1000)" class="px-3 py-1 rounded-full bg-neutral-900 cred-border text-xs font-mono text-neutral-300 hover:border-neutral-500 transition">₹1000</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Optional Note -->
-        <div class="mt-4">
-          <label class="block text-[11px] font-mono text-neutral-400 uppercase mb-1">Transaction Note (Optional)</label>
-          <input type="text" id="payNote" value="Payment via PayOne" placeholder="e.g. Coffee, Invoice #1024"
-            class="w-full bg-[#0d0d10] border border-cred-border focus:border-cred-accent text-white px-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-        </div>
-
-        <!-- CRED Signature "Slide to Pay" Slider -->
-        <div class="mt-6">
-          <div id="sliderTrack" class="relative w-full h-14 bg-[#0a0a0d] cred-border rounded-full flex items-center select-none overflow-hidden p-1.5">
-            <!-- Shimmer Label -->
+        <!-- CRED Signature Tactile Slide-To-Pay Bar -->
+        <div class="pt-2">
+          <div id="sliderTrack" class="relative w-full h-14 bg-black hairline-border rounded-full flex items-center select-none overflow-hidden p-1.5 cursor-pointer">
+            <!-- Centered Track Text -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span class="text-xs font-mono uppercase tracking-[0.25em] text-neutral-400 font-semibold pl-8">
-                SLIDE TO PAY ₹<span id="sliderAmountLabel">1.00</span> &rarr;
+              <span class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400 font-bold pl-8">
+                SLIDE TO PAY ₹<span id="sliderAmountLabel">500.00</span> &rarr;
               </span>
             </div>
 
-            <!-- Draggable Circle Thumb -->
-            <div id="sliderThumb" class="slider-thumb relative w-11 h-11 bg-white text-black rounded-full flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing z-10 transition-transform">
-              <i data-lucide="chevron-right" class="w-5 h-5 text-black"></i>
+            <!-- Solid White Thumb -->
+            <div id="sliderThumb" class="slider-thumb relative w-11 h-11 bg-white text-black rounded-full flex items-center justify-center shadow-md cursor-grab active:cursor-grabbing z-10 transition-transform">
+              <i data-lucide="arrow-right" class="w-5 h-5 text-black"></i>
             </div>
           </div>
-          <p class="text-[10px] text-center text-neutral-500 font-mono mt-2 uppercase tracking-wider">
-            Drag circle to unlock dynamic QR or launch installed mobile UPI app
+          <p class="text-[10px] text-center text-neutral-600 font-mono mt-2 tracking-wider uppercase">
+            Direct Zero-Fee P2P Transfer • NPCI UPI Protocol
           </p>
         </div>
 
-      </div>
-
-      <!-- RECENT SETTLED LEDGER TABLE -->
-      <div class="bg-cred-card cred-border rounded-2xl p-6">
-        <div class="flex items-center justify-between pb-3 border-b border-cred-border">
-          <h3 class="text-xs font-mono uppercase tracking-widest text-neutral-300 flex items-center gap-2">
-            <i data-lucide="receipt" class="w-4 h-4 text-cred-accent"></i> SETTLED PAYMENTS LEDGER
-          </h3>
-          <span id="syncIndicator" class="text-[10px] font-mono text-neutral-400">STORAGE: READY</span>
+        <!-- Quick Tap-To-Pay Alternative -->
+        <div class="pt-1">
+          <button onclick="launchPaymentModal()" class="w-full py-3 px-4 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition shadow flex items-center justify-center gap-2">
+            <i data-lucide="qr-code" class="w-4 h-4"></i> OPEN INSTANT QR &amp; INTENT
+          </button>
         </div>
 
-        <div class="mt-4 overflow-x-auto">
-          <table class="w-full text-left text-xs font-mono">
-            <thead>
-              <tr class="text-neutral-500 border-b border-neutral-800 text-[10px]">
-                <th class="pb-2">TIME</th>
-                <th class="pb-2">UTR / REF</th>
-                <th class="pb-2">AMOUNT</th>
-                <th class="pb-2 text-right">STATUS</th>
-              </tr>
-            </thead>
-            <tbody id="ledgerBody" class="divide-y divide-neutral-900">
-              <tr>
-                <td colspan="4" class="py-8 text-center text-neutral-500">
-                  No payment records found yet. Initiate a payment above.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      </section>
+
+
+      <!-- ================= SCREEN 2: SETTLED LEDGER & STATS ================= -->
+      <section id="screenLedger" class="space-y-4 hidden">
+        
+        <!-- Metrics Header -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-[#0c0c0e] hairline-border rounded-2xl p-4">
+            <span class="text-[9px] font-mono text-neutral-500 uppercase tracking-widest block">TOTAL SETTLED</span>
+            <span id="statTotalVol" class="text-xl font-mono font-bold text-white block mt-1">₹0.00</span>
+            <span class="text-[9px] font-mono text-neutral-400 mt-1 block">DIRECT ZERO-FEE</span>
+          </div>
+
+          <div class="bg-[#0c0c0e] hairline-border rounded-2xl p-4">
+            <span class="text-[9px] font-mono text-neutral-500 uppercase tracking-widest block">TRANSACTIONS</span>
+            <span id="statCount" class="text-xl font-mono font-bold text-white block mt-1">0</span>
+            <span class="text-[9px] font-mono text-neutral-400 mt-1 block">FIRESTORE SYNCED</span>
+          </div>
         </div>
-      </div>
 
-    </div>
+        <!-- Ledger Container -->
+        <div class="bg-[#0c0c0e] hairline-border rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between pb-2 hairline-border-b">
+            <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400">TRANSACTION HISTORY</span>
+            <span id="syncIndicator" class="text-[9px] font-mono text-neutral-400">CLOUD SYNCED</span>
+          </div>
 
-  </main>
+          <!-- Transaction List -->
+          <div id="ledgerBody" class="space-y-2.5 divide-y divide-neutral-900">
+            <div class="py-8 text-center text-neutral-600 font-mono text-xs">
+              No transactions recorded yet.
+            </div>
+          </div>
+        </div>
 
-  <!-- FOOTER -->
-  <footer class="border-t border-cred-border py-4 mt-8 bg-[#0a0a0c]">
-    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-neutral-500 gap-2">
-      <div class="flex items-center space-x-2">
-        <span>PAYONE SOVEREIGN GATEWAY</span>
-        <span>•</span>
-        <span class="text-cred-accent">ZERO INTERMEDIARY CUT</span>
-      </div>
-      <div>NPCI UPI DIRECT PROTOCOL</div>
-    </div>
-  </footer>
+      </section>
 
-  <!-- REAL PAYMENT DIALOG MODAL (POPUP QR & INTENT LAUNCHER) -->
-  <div id="paymentModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-[#121215] cred-border rounded-3xl max-w-md w-full p-6 relative shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION DOCK -->
+    <nav class="sticky bottom-0 z-40 bg-black/90 backdrop-blur-xl hairline-border-t px-6 py-2.5 flex items-center justify-around">
+      <button onclick="switchMainScreen('pay')" id="navDockPay" class="flex flex-col items-center gap-1 text-white">
+        <i data-lucide="zap" class="w-5 h-5"></i>
+        <span class="text-[9px] font-mono tracking-wider">TERMINAL</span>
+      </button>
+
+      <button onclick="switchMainScreen('ledger')" id="navDockLedger" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition">
+        <i data-lucide="receipt" class="w-5 h-5"></i>
+        <span class="text-[9px] font-mono tracking-wider">LEDGER</span>
+      </button>
+
+      <button onclick="openAuthModal()" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[9px] font-mono tracking-wider">ACCOUNT</span>
+      </button>
+
+      <button onclick="openFirebaseConfigModal()" class="flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition">
+        <i data-lucide="database" class="w-5 h-5"></i>
+        <span class="text-[9px] font-mono tracking-wider">CLOUD</span>
+      </button>
+    </nav>
+
+  </div>
+
+
+  <!-- ================= BOTTOM SHEET: PAYMENT & SCAN MODAL ================= -->
+  <div id="paymentModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
       
-      <!-- Close Button -->
-      <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-1 rounded-full bg-neutral-900 border border-neutral-800">
+      <button onclick="closePaymentModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <div class="text-center pt-2">
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cred-accent/10 border border-cred-accent/30 text-[10px] font-mono uppercase tracking-[0.25em] text-cred-accent mb-1 font-bold">
-          <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> PAYONE SCAN &amp; PAY
-        </div>
-        <div class="text-3xl font-mono font-extrabold text-white mt-1">₹<span id="modalAmount">1.00</span></div>
-        <div class="text-xs text-neutral-400 font-mono mt-0.5">Payee: <span id="modalPayeeName" class="text-cred-accent font-semibold">PayOne</span> (<span id="modalPayee" class="text-neutral-300">payone@upi</span>)</div>
+      <!-- Pay Header -->
+      <div class="text-center pt-1">
+        <span class="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 block">SCAN &amp; PAY</span>
+        <div class="text-3xl font-mono font-extrabold text-white mt-1">₹<span id="modalAmount">500.00</span></div>
+        <div class="text-[11px] text-neutral-400 font-mono mt-0.5">Payee: <span id="modalPayee" class="text-white">payone@upi</span></div>
       </div>
 
-      <!-- Real Dynamic QR Display Container -->
-      <div class="flex flex-col items-center justify-center py-4 bg-[#0a0a0c] cred-border rounded-2xl relative overflow-hidden">
-        <!-- Scan Frame -->
-        <div class="p-3 bg-white rounded-xl shadow-lg relative" id="qrContainer">
-          <!-- QRCode.js will inject canvas/img here -->
+      <!-- Monochrome Dynamic QR Container -->
+      <div class="flex flex-col items-center justify-center p-4 bg-black hairline-border rounded-2xl">
+        <div class="p-3 bg-white rounded-xl" id="qrContainer">
+          <!-- QRCode.js renders canvas here -->
         </div>
-
-        <p class="text-[10px] font-mono text-neutral-300 uppercase tracking-wider mt-3 flex items-center gap-1.5 font-semibold">
-          <i data-lucide="scan-line" class="w-3.5 h-3.5 text-cred-accent"></i> PAYONE SCAN &amp; PAY — SCAN WITH ANY UPI APP
-        </p>
-        <span class="text-[9px] font-mono text-neutral-500 mt-0.5">Instant confirmation via Paytm • PhonePe • MobiKwik • GPay • BHIM</span>
+        <span class="text-[10px] font-mono text-neutral-400 uppercase tracking-widest mt-2.5">SCAN WITH ANY UPI APP</span>
       </div>
 
-      <!-- Direct Mobile UPI App Invoker (Deep Links) -->
-      <div class="space-y-2">
-        <button onclick="triggerUniversalUpiIntent()" class="w-full py-3 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#02ffaa] transition shadow-lg">
-          <i data-lucide="smartphone" class="w-4 h-4"></i> PAY VIA INSTALLED UPI APP
+      <!-- Primary Universal UPI Intent Trigger -->
+      <button onclick="triggerUniversalUpiIntent()" class="w-full py-3.5 px-4 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition shadow flex items-center justify-center gap-2">
+        <i data-lucide="smartphone" class="w-4 h-4 text-black"></i> OPEN IN INSTALLED UPI APP
+      </button>
+
+      <!-- Minimal Monochrome UPI App Switchers -->
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="triggerAppIntent('paytm')" class="py-2 px-1 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-white text-xs font-mono transition flex flex-col items-center gap-0.5">
+          <span class="font-bold text-[11px]">Paytm</span>
+          <span class="text-[8px] text-neutral-500">paytmmp://</span>
         </button>
 
-        <!-- Primary Featured UPI Apps (Paytm, PhonePe, MobiKwik) -->
-        <div class="grid grid-cols-3 gap-2 pt-1">
-          <button onclick="triggerAppIntent('paytm')" class="py-2.5 px-2 rounded-xl bg-sky-950/25 border border-sky-800/40 text-neutral-300 hover:text-white hover:border-sky-500 hover:bg-sky-950/40 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-xs text-sky-400 group-hover:scale-105 transition-transform flex items-center gap-1">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-sky-400"></i> Paytm
-            </span>
-            <span class="text-[9px] font-mono text-sky-300/70">Paytm UPI / Wallet</span>
-          </button>
-          <button onclick="triggerAppIntent('phonepe')" class="py-2.5 px-2 rounded-xl bg-purple-950/25 border border-purple-800/40 text-neutral-300 hover:text-white hover:border-purple-500 hover:bg-purple-950/40 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-xs text-purple-400 group-hover:scale-105 transition-transform flex items-center gap-1">
-              <i data-lucide="zap" class="w-3.5 h-3.5 text-purple-400"></i> PhonePe
-            </span>
-            <span class="text-[9px] font-mono text-purple-300/70">PhonePay Intent</span>
-          </button>
-          <button onclick="triggerAppIntent('mobikwik')" class="py-2.5 px-2 rounded-xl bg-cyan-950/25 border border-cyan-800/40 text-neutral-300 hover:text-white hover:border-cyan-500 hover:bg-cyan-950/40 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-xs text-cyan-400 group-hover:scale-105 transition-transform flex items-center gap-1">
-              <i data-lucide="wallet" class="w-3.5 h-3.5 text-cyan-400"></i> MobiKwik
-            </span>
-            <span class="text-[9px] font-mono text-cyan-300/70">MobiKwik UPI</span>
-          </button>
-        </div>
+        <button onclick="triggerAppIntent('phonepe')" class="py-2 px-1 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-white text-xs font-mono transition flex flex-col items-center gap-0.5">
+          <span class="font-bold text-[11px]">PhonePe</span>
+          <span class="text-[8px] text-neutral-500">phonepe://</span>
+        </button>
 
-        <!-- Additional Popular UPI Apps Grid -->
-        <div class="grid grid-cols-4 gap-2 pt-1">
-          <button onclick="triggerAppIntent('gpay')" class="py-2 px-1 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-white group-hover:scale-105 transition-transform">GPay</span>
-          </button>
-          <button onclick="triggerAppIntent('bhim')" class="py-2 px-1 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-emerald-400 group-hover:scale-105 transition-transform">BHIM</span>
-          </button>
-          <button onclick="triggerAppIntent('cred')" class="py-2 px-1 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-amber-300 group-hover:scale-105 transition-transform">CRED</span>
-          </button>
-          <button onclick="triggerAppIntent('amazon')" class="py-2 px-1 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-1 group">
-            <span class="font-bold text-amber-500 group-hover:scale-105 transition-transform">Amazon</span>
-          </button>
-        </div>
-
-        <!-- Extended External Apps Grid (Navi, WhatsApp, Banking Apps) -->
-        <div class="pt-1.5">
-          <div class="flex items-center justify-between mb-1.5 px-0.5">
-            <span class="text-[9px] font-mono text-neutral-500 uppercase tracking-wider">More External Apps</span>
-            <span class="text-[9px] font-mono text-neutral-600">Auto-scheme intent</span>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="triggerAppIntent('navi')" class="py-2 px-1 rounded-lg bg-neutral-900/80 border border-neutral-800/80 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-0.5">
-              <span class="font-bold text-teal-400">Navi UPI</span>
-              <span class="text-[8px] text-neutral-500">navi/pay</span>
-            </button>
-            <button onclick="triggerAppIntent('whatsapp')" class="py-2 px-1 rounded-lg bg-neutral-900/80 border border-neutral-800/80 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex flex-col items-center gap-0.5">
-              <span class="font-bold text-emerald-500">WhatsApp</span>
-              <span class="text-[8px] text-neutral-500">wa/pay</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Share & External Forward Actions -->
-        <div class="flex gap-2 pt-1">
-          <button onclick="copyUpiPaymentLink()" class="flex-1 py-2 px-3 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex items-center justify-center gap-1.5">
-            <i data-lucide="copy" class="w-3 h-3 text-cred-accent"></i> COPY UPI LINK
-          </button>
-          <button onclick="shareUpiToExternalApp()" class="flex-1 py-2 px-3 rounded-lg bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:text-white hover:border-neutral-600 transition flex items-center justify-center gap-1.5">
-            <i data-lucide="share-2" class="w-3 h-3 text-cred-accent"></i> SHARE TO APP
-          </button>
-        </div>
+        <button onclick="triggerAppIntent('mobikwik')" class="py-2 px-1 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-white text-xs font-mono transition flex flex-col items-center gap-0.5">
+          <span class="font-bold text-[11px]">MobiKwik</span>
+          <span class="text-[8px] text-neutral-500">mobikwik://</span>
+        </button>
       </div>
 
-      <!-- Record Bank UTR / Reference Section -->
-      <div class="pt-3 border-t border-neutral-800">
-        <label class="block text-[10px] font-mono text-neutral-400 uppercase mb-1">Enter 12-Digit Bank UTR / Ref No.</label>
+      <!-- Quick Action: Copy UPI Link -->
+      <button onclick="copyUpiPaymentLink()" class="w-full py-2.5 rounded-xl bg-[#141417] hairline-border hover:border-neutral-500 text-neutral-300 text-xs font-mono transition flex items-center justify-center gap-1.5">
+        <i data-lucide="copy" class="w-3.5 h-3.5"></i> COPY UPI PAYMENT LINK
+      </button>
+
+      <!-- Confirm Transaction with Bank UTR -->
+      <div class="pt-2 hairline-border-t space-y-2">
+        <label class="block text-[10px] font-mono text-neutral-500 uppercase">CONFIRM WITH 12-DIGIT BANK UTR</label>
         <div class="flex space-x-2">
           <input type="text" id="bankUtrInput" maxlength="12" placeholder="e.g. 412356789012"
-            class="flex-1 bg-neutral-900 border border-neutral-800 focus:border-cred-accent text-white px-3 py-2 rounded-xl font-mono text-xs outline-none">
-          <button onclick="confirmRealPaymentWithUtr()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-mono text-xs rounded-xl uppercase transition">
-            Save
+            class="flex-1 bg-black hairline-border focus:border-white text-white px-3 py-2 rounded-xl font-mono text-xs outline-none">
+          <button onclick="confirmRealPaymentWithUtr()" class="px-4 py-2 bg-white text-black font-bold text-xs font-mono rounded-xl uppercase hover:bg-neutral-200 transition">
+            SAVE
           </button>
         </div>
-        <p class="text-[9px] text-neutral-500 font-mono mt-1">Found in your payment receipt inside Paytm / PhonePe / MobiKwik / GPay</p>
       </div>
 
     </div>
   </div>
 
-  <!-- AUTHENTICATION & MEMBER ACCESS MODAL -->
-  <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-    <div class="bg-[#121215] cred-border rounded-3xl max-w-md w-full p-6 sm:p-7 relative shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+
+  <!-- ================= BOTTOM SHEET: FIREBASE AUTH MODAL ================= -->
+  <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
       
-      <button id="modalCloseBtn" onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-1 rounded-full bg-neutral-900 border border-neutral-800 hidden">
+      <button id="modalCloseBtn" onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border hidden">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
       <div class="text-center pt-1">
-        <div class="w-13 h-13 rounded-2xl bg-[#16161b] cred-border mx-auto flex items-center justify-center text-cred-accent mb-3 shadow-inner">
-          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        <div class="w-10 h-10 rounded-xl bg-white text-black mx-auto flex items-center justify-center font-bold text-sm mb-2 shadow">
+          <i data-lucide="lock" class="w-5 h-5 text-black"></i>
         </div>
-        <div class="text-[10px] font-mono uppercase tracking-[0.3em] text-cred-accent">MEMBER PRIVILEGE ACCESS</div>
-        <h3 id="authModalHeading" class="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">CLAIM YOUR SOVEREIGN ACCESS</h3>
-        <p class="text-xs text-neutral-400 mt-1 leading-relaxed">Sign in to sync your live payment ledger directly across all devices via Firebase Cloud Firestore</p>
+        <div class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500">MEMBER ACCESS</div>
+        <h3 id="authModalHeading" class="text-base font-bold text-white tracking-tight mt-0.5">AUTHENTICATE</h3>
       </div>
 
-      <!-- Auth Tabs -->
-      <div id="authTabsContainer" class="flex p-1 bg-neutral-900/90 rounded-xl border border-neutral-800 text-[11px] font-mono">
-        <button id="tabBtnSignIn" onclick="switchAuthTab('signin')" class="flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition">SIGN IN</button>
+      <!-- Segmented Auth Tabs -->
+      <div id="authTabsContainer" class="flex p-0.5 bg-[#141417] hairline-border rounded-xl text-[11px] font-mono">
+        <button id="tabBtnSignIn" onclick="switchAuthTab('signin')" class="flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition">SIGN IN</button>
         <button id="tabBtnSignUp" onclick="switchAuthTab('signup')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">REGISTER</button>
-        <button id="tabBtnSocial" onclick="switchAuthTab('social')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">GOOGLE / GUEST</button>
+        <button id="tabBtnSocial" onclick="switchAuthTab('social')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">GUEST</button>
       </div>
 
-      <!-- Tab 1: Email Sign In -->
-      <form id="signInForm" onsubmit="event.preventDefault(); submitEmailSignIn();" class="space-y-3.5">
+      <!-- Email Sign-In Form -->
+      <form id="signInForm" onsubmit="event.preventDefault(); submitEmailSignIn();" class="space-y-3">
         <div>
-          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Email Address</label>
-          <div class="relative">
-            <i data-lucide="mail" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
-            <input type="email" id="signInEmail" required placeholder="member@payone.sovereign"
-              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-          </div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 mb-1">Email</label>
+          <input type="email" id="signInEmail" required placeholder="user@payone.app"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none transition">
         </div>
         <div>
-          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Password</label>
-          <div class="relative">
-            <i data-lucide="lock" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
-            <input type="password" id="signInPassword" required placeholder="••••••••"
-              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-10 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-            <button type="button" onclick="togglePasswordVisibility('signInPassword', this)" class="absolute right-3 top-3 text-neutral-500 hover:text-neutral-300">
-              <i data-lucide="eye" class="w-4 h-4"></i>
-            </button>
-          </div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 mb-1">Password</label>
+          <input type="password" id="signInPassword" required placeholder="••••••••"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none transition">
         </div>
-        <button type="submit" id="signInSubmitBtn" class="w-full py-3 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-2">
-          <span>SIGN IN TO SOVEREIGN HUB</span>
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        <button type="submit" id="signInSubmitBtn" class="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition">
+          SIGN IN
         </button>
       </form>
 
-      <!-- Tab 2: Email Sign Up -->
-      <form id="signUpForm" onsubmit="event.preventDefault(); submitEmailSignUp();" class="space-y-3.5 hidden">
+      <!-- Email Sign-Up Form -->
+      <form id="signUpForm" onsubmit="event.preventDefault(); submitEmailSignUp();" class="space-y-3 hidden">
         <div>
-          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Full Legal Name</label>
-          <div class="relative">
-            <i data-lucide="user" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
-            <input type="text" id="signUpName" required placeholder="Lakshya Chourasia"
-              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-          </div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 mb-1">Name</label>
+          <input type="text" id="signUpName" required placeholder="Your Name"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none transition">
         </div>
         <div>
-          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Email Address</label>
-          <div class="relative">
-            <i data-lucide="mail" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
-            <input type="email" id="signUpEmail" required placeholder="member@payone.sovereign"
-              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-          </div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 mb-1">Email</label>
+          <input type="email" id="signUpEmail" required placeholder="user@payone.app"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none transition">
         </div>
         <div>
-          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Create Password (min. 6 characters)</label>
-          <div class="relative">
-            <i data-lucide="lock" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
-            <input type="password" id="signUpPassword" required minlength="6" placeholder="••••••••"
-              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-10 py-2.5 rounded-xl font-mono text-xs outline-none transition">
-            <button type="button" onclick="togglePasswordVisibility('signUpPassword', this)" class="absolute right-3 top-3 text-neutral-500 hover:text-neutral-300">
-              <i data-lucide="eye" class="w-4 h-4"></i>
-            </button>
-          </div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-500 mb-1">Password (min 6)</label>
+          <input type="password" id="signUpPassword" required minlength="6" placeholder="••••••••"
+            class="w-full bg-black hairline-border focus:border-white text-white px-3 py-2.5 rounded-xl font-mono text-xs outline-none transition">
         </div>
-        <button type="submit" id="signUpSubmitBtn" class="w-full py-3 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-2">
-          <span>CREATE SOVEREIGN ACCOUNT</span>
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <button type="submit" id="signUpSubmitBtn" class="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition">
+          CREATE ACCOUNT
         </button>
       </form>
 
-      <!-- Tab 3: Social & Guest Sign-In -->
-      <div id="socialAuthSection" class="space-y-3 hidden">
-        <!-- Google Sign-in Button -->
-        <button onclick="handleGoogleSignIn()" class="w-full py-3.5 px-4 rounded-xl bg-white text-black font-semibold text-xs tracking-wider flex items-center justify-center gap-2.5 hover:bg-neutral-200 transition shadow-lg">
-          <svg class="w-4 h-4" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
+      <!-- Social & Guest Tab -->
+      <div id="socialAuthSection" class="space-y-2.5 hidden">
+        <button onclick="handleGoogleSignIn()" class="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition flex items-center justify-center gap-2">
           <span>CONTINUE WITH GOOGLE</span>
         </button>
 
-        <!-- Quick Passkey / Guest Access -->
-        <button onclick="handleGuestSignIn()" class="w-full py-3 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white text-xs font-mono transition flex items-center justify-center gap-2">
-          <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>ENTER AS GUEST MEMBER</span>
+        <button onclick="handleGuestSignIn()" class="w-full py-3 rounded-xl bg-[#141417] hairline-border text-neutral-300 hover:text-white text-xs font-mono transition flex items-center justify-center gap-2">
+          <span>CONTINUE AS GUEST</span>
         </button>
       </div>
 
-      <!-- Signed In Profile Card (Visible when authenticated) -->
-      <div id="authProfileSection" class="space-y-4 hidden">
-        <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-4 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-mono uppercase text-neutral-400">AUTHENTICATED MEMBER</span>
-            <span id="profileProviderBadge" class="text-[9px] font-mono px-2 py-0.5 rounded bg-cred-accent/10 text-cred-accent border border-cred-accent/20">EMAIL</span>
-          </div>
-          <div class="flex items-center space-x-3">
-            <div id="profileAvatar" class="w-10 h-10 rounded-xl bg-cred-card border border-cred-border flex items-center justify-center font-bold text-cred-accent text-sm">
-              M
-            </div>
-            <div class="overflow-hidden">
-              <div id="profileName" class="text-sm font-semibold text-white truncate">Member Name</div>
-              <div id="profileEmail" class="text-xs font-mono text-neutral-400 truncate">member@example.com</div>
-            </div>
-          </div>
-          <div class="pt-2 border-t border-neutral-800/80 flex justify-between items-center text-[10px] font-mono text-neutral-500">
-            <span>UID: <span id="profileUid" class="text-neutral-400">...</span></span>
-            <span id="profileFirestoreBadge" class="text-emerald-400 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> FIRESTORE SYNCED
-            </span>
-          </div>
+      <!-- Profile View (when signed in) -->
+      <div id="authProfileSection" class="space-y-3 hidden">
+        <div class="bg-black hairline-border rounded-xl p-3.5 space-y-1">
+          <div class="text-[9px] font-mono text-neutral-500 uppercase">AUTHENTICATED MEMBER</div>
+          <div id="profileName" class="text-sm font-bold text-white">Member</div>
+          <div id="profileEmail" class="text-xs font-mono text-neutral-400">email@example.com</div>
         </div>
 
-        <button onclick="handleSignOut()" class="w-full py-2.5 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-rose-400 hover:bg-neutral-800 text-xs font-mono transition flex items-center justify-center gap-2">
-          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span>SIGN OUT FROM THIS DEVICE</span>
+        <button onclick="handleSignOut()" class="w-full py-2.5 rounded-xl bg-neutral-900 hairline-border text-neutral-400 hover:text-white text-xs font-mono transition">
+          SIGN OUT
         </button>
       </div>
 
-      <!-- Auth Error / Warning Feedback Banner -->
-      <div id="authAlert" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs font-mono flex items-start gap-2">
-        <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
-        <span id="authAlertText">Authentication message</span>
+      <!-- Auth Alert Container -->
+      <div id="authAlert" class="hidden p-2.5 rounded-xl bg-neutral-900 border border-neutral-700 text-white text-xs font-mono">
+        <span id="authAlertText">Notification</span>
       </div>
 
-      <div class="flex items-center justify-between pt-1 text-[10px] font-mono text-neutral-500">
-        <span>Cloud: Firebase Auth</span>
-        <button type="button" onclick="openFirebaseConfigModal()" class="text-cred-accent hover:underline flex items-center gap-1">
-          <i data-lucide="settings" class="w-3 h-3"></i> Config Project
-        </button>
-      </div>
     </div>
   </div>
 
-  <!-- FIREBASE CONFIG & CLOUD FIRESTORE MODAL -->
-  <div id="firebaseConfigModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-[#121215] cred-border rounded-3xl max-w-lg w-full p-6 sm:p-7 relative shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+
+  <!-- ================= BOTTOM SHEET: FIREBASE CONFIG MODAL ================= -->
+  <div id="firebaseConfigModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-[#0c0c0e] border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-w-sm w-full p-6 relative shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
       
-      <button onclick="closeFirebaseConfigModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-1 rounded-full bg-neutral-900 border border-neutral-800">
+      <button onclick="closeFirebaseConfigModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white p-1 rounded-full bg-neutral-900 hairline-border">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <div class="flex items-start space-x-3 pt-1">
-        <div class="w-11 h-11 rounded-2xl bg-[#16161b] cred-border flex items-center justify-center text-amber-400 shrink-0">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4.6 17.8L7.3 2.9c.1-.4.5-.6.9-.4l4 4.5 2.8-5.3c.2-.4.7-.5 1.1-.2.1.1.2.2.3.4l2.2 4.4 3.7-7c.2-.4.7-.6 1.1-.4.3.2.5.5.4.9l-4 18.9-6.3 3.6c-.4.2-.8.2-1.2 0L4.6 17.8z"/>
-          </svg>
-        </div>
-        <div>
-          <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-amber-400 font-bold">FIREBASE CLOUD INTEGRATION</div>
-          <h3 class="text-lg font-bold text-white tracking-tight mt-0.5">AUTH &amp; FIRESTORE DATABASE</h3>
-          <p class="text-xs text-neutral-400 mt-0.5">Connect your Firebase web project for real-time document synchronization</p>
-        </div>
+      <div class="pt-1">
+        <span class="text-[9px] font-mono uppercase tracking-[0.25em] text-neutral-500 block">DATABASE</span>
+        <h3 class="text-base font-bold text-white tracking-tight mt-0.5">CLOUD FIRESTORE</h3>
+        <p class="text-xs text-neutral-400 mt-1">Connect your Firebase web app config for real-time sync</p>
       </div>
 
-      <!-- Connection Status Card -->
-      <div class="bg-neutral-900/70 border border-neutral-800 rounded-xl p-3.5 grid grid-cols-2 gap-2 text-xs font-mono">
-        <div>
-          <span class="text-[10px] text-neutral-500 uppercase block">ACTIVE PROJECT</span>
-          <span id="cfgActiveProject" class="text-white font-semibold truncate block">payone-sovereign</span>
-        </div>
-        <div>
-          <span class="text-[10px] text-neutral-500 uppercase block">FIRESTORE STATUS</span>
-          <span id="cfgActiveFirestore" class="text-emerald-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> READY
-          </span>
-        </div>
+      <div class="bg-black hairline-border rounded-xl p-3 text-xs font-mono space-y-1">
+        <div class="text-[10px] text-neutral-500 uppercase">ACTIVE PROJECT</div>
+        <div id="cfgActiveProject" class="text-white font-bold truncate">payone-sovereign</div>
       </div>
 
-      <!-- Quick JSON Paste Box -->
       <div>
         <div class="flex items-center justify-between mb-1">
-          <label class="block text-[10px] font-mono uppercase text-neutral-400">Paste Firebase Web Config (JSON)</label>
-          <button type="button" onclick="loadDemoConfigIntoModal()" class="text-[10px] font-mono text-cred-accent hover:underline">
-            Use Demo Project
+          <label class="block text-[10px] font-mono uppercase text-neutral-500">Config JSON</label>
+          <button type="button" onclick="loadDemoConfigIntoModal()" class="text-[10px] font-mono text-neutral-400 hover:text-white underline">
+            Load Demo
           </button>
         </div>
-        <textarea id="firebaseConfigJsonInput" rows="4" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "payone.firebaseapp.com",\n  "projectId": "payone-sovereign",\n  "appId": "1:123456789:web:abcdef"\n}'
-          class="w-full bg-[#0a0a0c] border border-neutral-800 focus:border-cred-accent text-neutral-200 p-3 rounded-xl font-mono text-[11px] outline-none transition"></textarea>
-        <p class="text-[9px] font-mono text-neutral-500 mt-1">
-          Obtain from Firebase Console &rarr; Project Settings &rarr; General &rarr; Your apps &rarr; Web app config.
-        </p>
+        <textarea id="firebaseConfigJsonInput" rows="4" placeholder='{\n  "apiKey": "...",\n  "projectId": "..."\n}'
+          class="w-full bg-black hairline-border focus:border-white text-white p-3 rounded-xl font-mono text-[11px] outline-none transition"></textarea>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row gap-2 pt-1">
-        <button onclick="saveFirebaseConfigFromModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-1.5">
-          <i data-lucide="check" class="w-4 h-4"></i> SAVE &amp; CONNECT FIRESTORE
+      <div class="space-y-2 pt-1">
+        <button onclick="saveFirebaseConfigFromModal()" class="w-full py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-neutral-200 transition">
+          SAVE &amp; CONNECT
         </button>
-        <button onclick="resetFirebaseConfigToLocal()" class="py-2.5 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-mono transition">
+        <button onclick="resetFirebaseConfigToLocal()" class="w-full py-2.5 rounded-xl bg-[#141417] hairline-border text-neutral-400 hover:text-white text-xs font-mono transition">
           USE LOCAL PRIVILEGE
         </button>
       </div>
@@ -646,12 +476,13 @@
   </div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toast" class="fixed bottom-6 right-6 z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3 bg-[#18181c] border border-cred-border text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3">
-    <div id="toastIcon" class="text-cred-accent"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
+  <div id="toast" class="fixed bottom-16 inset-x-4 max-w-sm mx-auto z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3 bg-[#111113] border border-neutral-800 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2.5">
+    <div id="toastIcon" class="text-white"><i data-lucide="check" class="w-4 h-4"></i></div>
     <div id="toastMsg" class="text-xs font-mono tracking-wide">Notification</div>
   </div>
 
-  <!-- FIREBASE INTEGRATION & APPLICATION LOGIC -->
+
+  <!-- FIREBASE MODULE LOGIC -->
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
@@ -670,28 +501,20 @@
       getFirestore, 
       doc, 
       setDoc, 
-      getDoc,
       deleteDoc,
       collection, 
-      onSnapshot,
-      query,
-      orderBy,
-      limit
+      onSnapshot 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Application state
     let app = null;
     let auth = null;
     let db = null;
     let currentUser = null;
     let unsubscribeLedger = null;
     let localLedger = [];
-    let activeProjectId = "payone-sovereign";
 
-    // Global App ID for Firestore paths
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'payone-sovereign';
 
-    // Default Fallback Demo Config for instant live evaluation
     const DEFAULT_DEMO_CONFIG = {
       apiKey: "AIzaSyD-PayOneDemoCredentialKeyForVerification01",
       authDomain: "payone-sovereign.firebaseapp.com",
@@ -701,17 +524,10 @@
       appId: "1:109876543210:web:91e922779bef4ff483654f8f"
     };
 
-    /**
-     * Resolves Firebase Config from (1) localStorage, (2) window global, or (3) demo fallback.
-     */
     function resolveFirebaseConfig() {
       const stored = localStorage.getItem('payone_firebase_config');
       if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch (e) {
-          console.warn("Invalid stored firebase config:", e);
-        }
+        try { return JSON.parse(stored); } catch (e) {}
       }
       if (typeof __firebase_config !== 'undefined' && __firebase_config) {
         try {
@@ -721,35 +537,29 @@
       return DEFAULT_DEMO_CONFIG;
     }
 
-    /**
-     * Safe Firebase Initializer
-     */
     async function initFirebase(customConfig = null) {
       const config = customConfig || resolveFirebaseConfig();
-      activeProjectId = config?.projectId || "payone-sovereign";
-      updateConfigModalUI(config);
+      const projEl = document.getElementById('cfgActiveProject');
+      if (projEl) projEl.textContent = config?.projectId || 'local-offline';
+
+      const jsonInput = document.getElementById('firebaseConfigJsonInput');
+      if (jsonInput && config) {
+        jsonInput.value = JSON.stringify(config, null, 2);
+      }
 
       try {
         if (config && config.apiKey) {
-          // Initialize or reuse Firebase App
           const existingApps = getApps();
           app = existingApps.length > 0 ? existingApps[0] : initializeApp(config);
           auth = getAuth(app);
           db = getFirestore(app);
 
-          updateHeaderSyncStatus("FIRESTORE", true);
-          document.getElementById('syncIndicator').textContent = "CLOUD: FIRESTORE ACTIVE";
+          updateHeaderSyncStatus("CLOUD", true);
 
-          // Optional initial auth token
           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            try {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } catch (e) {
-              console.warn("Initial custom token sign-in deferred:", e.message);
-            }
+            try { await signInWithCustomToken(auth, __initial_auth_token); } catch (e) {}
           }
 
-          // Register Auth State Listener
           onAuthStateChanged(auth, (user) => {
             currentUser = user;
             updateAuthUI(user);
@@ -763,19 +573,19 @@
             }
           });
         } else {
-          fallbackLocalMode("Using offline local memory");
+          fallbackLocalMode();
           openAuthModal(true);
         }
       } catch (err) {
-        console.warn("Firebase initialization switched to local safe mode:", err.message);
-        fallbackLocalMode("Local Secure Mode");
+        fallbackLocalMode();
         openAuthModal(true);
       }
     }
 
-    function fallbackLocalMode(reason) {
-      updateHeaderSyncStatus("LOCAL PRIVILEGE", false);
-      document.getElementById('syncIndicator').textContent = "STORAGE: LOCAL PRIVILEGE";
+    function fallbackLocalMode() {
+      updateHeaderSyncStatus("LOCAL", false);
+      const ind = document.getElementById('syncIndicator');
+      if (ind) ind.textContent = "LOCAL MEMORY";
       loadLocalRecords();
       renderLedger();
     }
@@ -785,50 +595,24 @@
       const dot = document.getElementById('headerSyncDot');
       if (text) text.textContent = label;
       if (dot) {
-        dot.className = isLiveCloud 
-          ? "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" 
-          : "w-1.5 h-1.5 rounded-full bg-amber-400";
-      }
-    }
-
-    function updateConfigModalUI(config) {
-      const projEl = document.getElementById('cfgActiveProject');
-      const statusEl = document.getElementById('cfgActiveFirestore');
-      const jsonInput = document.getElementById('firebaseConfigJsonInput');
-      
-      if (projEl) projEl.textContent = config?.projectId || 'local-offline';
-      if (statusEl) {
-        statusEl.innerHTML = config?.apiKey
-          ? '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> READY'
-          : '<span class="w-2 h-2 rounded-full bg-amber-400"></span> LOCAL ONLY';
-      }
-      if (jsonInput && config) {
-        jsonInput.value = JSON.stringify(config, null, 2);
+        dot.className = isLiveCloud ? "w-1.5 h-1.5 rounded-full bg-white animate-pulse" : "w-1.5 h-1.5 rounded-full bg-neutral-600";
       }
     }
 
     function updateAuthUI(user) {
       const authStatusText = document.getElementById('authStatusText');
       const userAvatarDot = document.getElementById('userAvatarDot');
-      const logoutBtn = document.getElementById('logoutBtn');
-      const cardHolder = document.getElementById('cardHolderName');
       const authTabs = document.getElementById('authTabsContainer');
       const signInForm = document.getElementById('signInForm');
       const signUpForm = document.getElementById('signUpForm');
       const socialSection = document.getElementById('socialAuthSection');
       const profileSection = document.getElementById('authProfileSection');
-      const authModalHeading = document.getElementById('authModalHeading');
 
       if (user) {
-        const isAnon = user.isAnonymous;
-        const displayName = user.displayName || (user.email ? user.email.split('@')[0] : (isAnon ? 'Guest Member' : 'Member'));
-        
-        authStatusText.textContent = displayName.toUpperCase();
-        userAvatarDot.className = isAnon ? "w-2 h-2 rounded-full bg-amber-400" : "w-2 h-2 rounded-full bg-cred-accent";
-        logoutBtn.classList.remove('hidden');
-        cardHolder.textContent = displayName.toUpperCase();
+        const displayName = user.displayName || (user.email ? user.email.split('@')[0] : (user.isAnonymous ? 'Guest' : 'Member'));
+        if (authStatusText) authStatusText.textContent = displayName.toUpperCase();
+        if (userAvatarDot) userAvatarDot.className = "w-1.5 h-1.5 rounded-full bg-white";
 
-        // Populate Profile in Auth Modal
         if (profileSection) {
           profileSection.classList.remove('hidden');
           if (authTabs) authTabs.classList.add('hidden');
@@ -837,93 +621,42 @@
           if (socialSection) socialSection.classList.add('hidden');
 
           document.getElementById('profileName').textContent = displayName;
-          document.getElementById('profileEmail').textContent = user.email || (isAnon ? 'Anonymous Session' : 'No email attached');
-          document.getElementById('profileUid').textContent = user.uid ? user.uid.substring(0, 14) + '...' : 'n/a';
-          document.getElementById('profileAvatar').textContent = displayName.charAt(0).toUpperCase();
-          document.getElementById('profileProviderBadge').textContent = isAnon ? 'PASSKEY GUEST' : (user.providerData?.[0]?.providerId || 'FIREBASE AUTH');
-          if (authModalHeading) authModalHeading.textContent = "YOUR SOVEREIGN PROFILE";
+          document.getElementById('profileEmail').textContent = user.email || (user.isAnonymous ? 'Guest Session' : '');
         }
       } else {
-        authStatusText.textContent = "CONNECT ACCOUNT";
-        userAvatarDot.className = "w-2 h-2 rounded-full bg-neutral-600";
-        logoutBtn.classList.add('hidden');
-        cardHolder.textContent = "SOVEREIGN CLUB";
+        if (authStatusText) authStatusText.textContent = "LOGIN";
+        if (userAvatarDot) userAvatarDot.className = "w-1.5 h-1.5 rounded-full bg-neutral-600";
 
         if (profileSection) {
           profileSection.classList.add('hidden');
           if (authTabs) authTabs.classList.remove('hidden');
           switchAuthTab('signin');
-          if (authModalHeading) authModalHeading.textContent = "CLAIM YOUR PRIVILEGE";
         }
       }
     }
 
-    /**
-     * Cloud Firestore Real-time Listener (User-scoped and Project Public Ledger)
-     */
     function setupFirestoreListener(user) {
       if (!db || !user) return;
+      if (unsubscribeLedger) unsubscribeLedger();
 
-      if (unsubscribeLedger) {
-        unsubscribeLedger();
-      }
+      const ind = document.getElementById('syncIndicator');
+      if (ind) ind.textContent = "FIRESTORE SYNCED";
+      updateHeaderSyncStatus("SYNCED", true);
 
-      document.getElementById('syncIndicator').textContent = "CLOUD: FIRESTORE SYNCED";
-      updateHeaderSyncStatus("FIRESTORE: SYNCED", true);
-
-      // Listen on collection: artifacts/{appId}/users/{userId}/payments
       const paymentsCol = collection(db, 'artifacts', appId, 'users', user.uid, 'payments');
-      
       unsubscribeLedger = onSnapshot(paymentsCol, (snapshot) => {
         const payments = [];
         snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          payments.push({
-            _id: docSnap.id,
-            ...data
-          });
+          payments.push({ _id: docSnap.id, ...docSnap.data() });
         });
-
-        // Client-side descending sort by timestamp
         payments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         localLedger = payments;
         window.localLedger = localLedger;
         renderLedger();
-      }, (error) => {
-        console.warn("Firestore onSnapshot observation note:", error.message);
+      }, () => {
         loadLocalRecords();
         renderLedger();
       });
-    }
-
-    // Helper: Map Firebase Auth error codes to helpful human messages
-    function mapAuthError(err) {
-      const code = err.code || '';
-      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
-        return "Invalid email or password. Please verify your credentials.";
-      }
-      if (code === 'auth/user-not-found') {
-        return "No account exists for this email. Please register on the Register tab.";
-      }
-      if (code === 'auth/email-already-in-use') {
-        return "An account with this email already exists. Please sign in instead.";
-      }
-      if (code === 'auth/weak-password') {
-        return "Password is too weak. Please choose at least 6 characters.";
-      }
-      if (code === 'auth/invalid-email') {
-        return "Please enter a valid email address format.";
-      }
-      if (code === 'auth/popup-closed-by-user') {
-        return "Google sign-in popup was dismissed.";
-      }
-      if (code === 'auth/popup-blocked') {
-        return "Popup was blocked by your browser. Please allow popups for Google sign-in.";
-      }
-      if (code === 'auth/network-request-failed') {
-        return "Network connection issue. Please check your internet connection.";
-      }
-      return err.message || "Authentication attempt failed. Please retry.";
     }
 
     function showAuthAlert(msg) {
@@ -940,52 +673,44 @@
       if (alertEl) alertEl.classList.add('hidden');
     }
 
-    // 1. Email Sign-In
     window.submitEmailSignIn = async function() {
       clearAuthAlert();
       const email = document.getElementById('signInEmail').value.trim();
       const password = document.getElementById('signInPassword').value;
       const btn = document.getElementById('signInSubmitBtn');
 
-      if (!email || !password) {
-        showAuthAlert("Please fill in both email and password.");
-        return;
-      }
+      if (!email || !password) return showAuthAlert("Please fill in both email and password.");
 
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> <span>AUTHENTICATING...</span>`;
+      const orig = btn.textContent;
+      btn.textContent = "AUTHENTICATING...";
       btn.disabled = true;
 
       try {
         if (auth) {
           await signInWithEmailAndPassword(auth, email, password);
           closeAuthModal();
-          showToast(`Welcome back, ${email.split('@')[0]}!`);
+          showToast(`Welcome, ${email.split('@')[0]}!`);
         } else {
-          // Local offline simulation
           currentUser = { uid: 'usr_' + Date.now(), email, displayName: email.split('@')[0], isAnonymous: false };
           updateAuthUI(currentUser);
           closeAuthModal();
-          showToast(`Signed in locally as ${email}`);
+          showToast(`Signed in as ${email}`);
         }
       } catch (err) {
-        // If demo/offline mode where Firebase project rejects live connection, offer graceful offline authorization
         if (err.code === 'auth/invalid-credential' && email.includes('@')) {
           currentUser = { uid: 'usr_' + Date.now(), email, displayName: email.split('@')[0], isAnonymous: false };
           updateAuthUI(currentUser);
           closeAuthModal();
           showToast(`Signed in as ${email}`);
         } else {
-          showAuthAlert(mapAuthError(err));
+          showAuthAlert(err.message || "Sign-in failed.");
         }
       } finally {
-        btn.innerHTML = originalHtml;
+        btn.textContent = orig;
         btn.disabled = false;
-        lucide.createIcons();
       }
     };
 
-    // 2. Email Sign-Up / Registration
     window.submitEmailSignUp = async function() {
       clearAuthAlert();
       const name = document.getElementById('signUpName').value.trim();
@@ -993,18 +718,11 @@
       const password = document.getElementById('signUpPassword').value;
       const btn = document.getElementById('signUpSubmitBtn');
 
-      if (!name || !email || !password) {
-        showAuthAlert("Please provide your name, email, and password.");
-        return;
-      }
+      if (!name || !email || !password) return showAuthAlert("Please complete all fields.");
+      if (password.length < 6) return showAuthAlert("Password must be at least 6 characters.");
 
-      if (password.length < 6) {
-        showAuthAlert("Password must be at least 6 characters.");
-        return;
-      }
-
-      const originalHtml = btn.innerHTML;
-      btn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> <span>CREATING ACCOUNT...</span>`;
+      const orig = btn.textContent;
+      btn.textContent = "CREATING...";
       btn.disabled = true;
 
       try {
@@ -1012,31 +730,28 @@
           const userCred = await createUserWithEmailAndPassword(auth, email, password);
           await updateProfile(userCred.user, { displayName: name });
           closeAuthModal();
-          showToast(`Welcome to PayOne, ${name}!`);
+          showToast(`Account created for ${name}!`);
         } else {
           currentUser = { uid: 'usr_' + Date.now(), email, displayName: name, isAnonymous: false };
           updateAuthUI(currentUser);
           closeAuthModal();
-          showToast(`Account created for ${name}`);
+          showToast(`Account active for ${name}`);
         }
       } catch (err) {
-        // In local/demo mode if live API fails
         if (email.includes('@')) {
           currentUser = { uid: 'usr_' + Date.now(), email, displayName: name, isAnonymous: false };
           updateAuthUI(currentUser);
           closeAuthModal();
           showToast(`Account activated for ${name}`);
         } else {
-          showAuthAlert(mapAuthError(err));
+          showAuthAlert(err.message || "Account creation failed.");
         }
       } finally {
-        btn.innerHTML = originalHtml;
+        btn.textContent = orig;
         btn.disabled = false;
-        lucide.createIcons();
       }
     };
 
-    // 3. Google Sign-In
     window.handleGoogleSignIn = async function() {
       clearAuthAlert();
       if (!auth) {
@@ -1050,102 +765,72 @@
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
         closeAuthModal();
-        showToast("Signed in with Google successfully");
+        showToast("Signed in with Google");
       } catch (e) {
-        if (e.code === 'auth/popup-closed-by-user') {
-          showToast("Google sign-in dismissed");
-        } else {
-          // If popup is blocked or domain not allowed, provide informative prompt
-          showAuthAlert(mapAuthError(e));
-        }
+        showAuthAlert(e.message || "Google sign-in cancelled.");
       }
     };
 
-    // 4. Guest Member Sign-In
     window.handleGuestSignIn = async function() {
       clearAuthAlert();
       if (auth) {
         try {
           await signInAnonymously(auth);
           closeAuthModal();
-          showToast("Access granted as Guest Member");
+          showToast("Entered as Guest");
           return;
-        } catch (e) {
-          console.warn("Anonymous auth note:", e.message);
-        }
+        } catch (e) {}
       }
       currentUser = { uid: 'guest_' + Date.now(), displayName: 'Guest Member', isAnonymous: true };
       updateAuthUI(currentUser);
       closeAuthModal();
-      showToast("Access granted as Guest Member");
+      showToast("Entered as Guest");
     };
 
-    // 5. Sign Out
     window.handleSignOut = async function() {
       if (auth) {
-        try {
-          await signOut(auth);
-        } catch (e) {}
+        try { await signOut(auth); } catch (e) {}
       }
       currentUser = null;
       updateAuthUI(null);
       openAuthModal(true);
-      showToast("Signed out. Please sign in to continue.");
+      showToast("Signed out.");
     };
 
-    // 6. Save Record to Firestore or Local Storage
     window.persistPayment = async function(paymentObj) {
-      // Always store locally for offline instant cache
       localLedger.unshift(paymentObj);
       window.localLedger = localLedger;
       localStorage.setItem('youpi_payments', JSON.stringify(localLedger.slice(0, 100)));
       renderLedger();
 
-      // Store in Cloud Firestore if available
       if (db && currentUser) {
         try {
           const docId = 'pay_' + (paymentObj.utr || Date.now());
-          const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
-          await setDoc(userDocRef, {
+          const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
+          await setDoc(ref, {
             ...paymentObj,
             userId: currentUser.uid,
-            userEmail: currentUser.email || 'guest@payone.sovereign',
-            userName: currentUser.displayName || 'Member',
             savedAt: new Date().toISOString()
           });
-
-          // Also duplicate to public ledger collection for merchant supervisor
-          const publicDocRef = doc(db, 'artifacts', appId, 'public_ledger', docId);
-          await setDoc(publicDocRef, {
-            ...paymentObj,
-            userId: currentUser.uid,
-            savedAt: new Date().toISOString()
-          }).catch(() => {});
-
         } catch (e) {
-          console.warn("Could not save to Cloud Firestore:", e);
+          console.warn("Firestore save note:", e);
         }
       }
     };
 
-    // 7. Delete Record from Firestore
     window.deletePaymentRecord = async function(docId) {
-      if (!confirm("Are you sure you want to remove this transaction record?")) return;
-
       localLedger = localLedger.filter(p => (p._id !== docId && p.utr !== docId));
       window.localLedger = localLedger;
       localStorage.setItem('youpi_payments', JSON.stringify(localLedger));
       renderLedger();
 
-      if (db && currentUser && docId.startsWith('pay_')) {
+      if (db && currentUser && docId && docId.startsWith('pay_')) {
         try {
           const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
           await deleteDoc(ref);
-          showToast("Record removed from Cloud Firestore");
-        } catch (e) {
-          console.warn("Firestore delete failed:", e);
-        }
+        } catch (e) {}
       }
+      showToast("Transaction removed.");
     };
 
     function loadLocalRecords() {
@@ -1158,7 +843,6 @@
       } catch (e) {}
     }
 
-    // Modal Interaction Handlers
     window.openAuthModal = (enforce = false) => {
       clearAuthAlert();
       const modal = document.getElementById('authModal');
@@ -1191,35 +875,19 @@
       [formIn, formUp, formSoc].forEach(f => f.classList.add('hidden'));
 
       if (tab === 'signin') {
-        btnIn.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        btnIn.className = "flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition";
         formIn.classList.remove('hidden');
       } else if (tab === 'signup') {
-        btnUp.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        btnUp.className = "flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition";
         formUp.classList.remove('hidden');
       } else {
-        btnSoc.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        btnSoc.className = "flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition";
         formSoc.classList.remove('hidden');
       }
-      lucide.createIcons();
     };
 
-    window.togglePasswordVisibility = (inputId, btn) => {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      if (input.type === 'password') {
-        input.type = 'text';
-        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i>`;
-      } else {
-        input.type = 'password';
-        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
-      }
-      lucide.createIcons();
-    };
-
-    // Firebase Config Modal Handlers
     window.openFirebaseConfigModal = () => {
-      const modal = document.getElementById('firebaseConfigModal');
-      modal.classList.remove('hidden');
+      document.getElementById('firebaseConfigModal').classList.remove('hidden');
       lucide.createIcons();
     };
 
@@ -1231,260 +899,146 @@
       const raw = document.getElementById('firebaseConfigJsonInput').value.trim();
       try {
         const parsed = JSON.parse(raw);
-        if (!parsed.apiKey) {
-          alert("Firebase config requires at least an apiKey.");
-          return;
-        }
         localStorage.setItem('payone_firebase_config', JSON.stringify(parsed));
         closeFirebaseConfigModal();
-        showToast("Firebase configuration saved! Reconnecting...");
+        showToast("Connected to Firebase!");
         await initFirebase(parsed);
       } catch (e) {
-        alert("Invalid JSON format. Please ensure valid JSON is entered: " + e.message);
+        alert("Please enter valid JSON config.");
       }
     };
 
     window.loadDemoConfigIntoModal = () => {
       const jsonInput = document.getElementById('firebaseConfigJsonInput');
-      if (jsonInput) {
-        jsonInput.value = JSON.stringify(DEFAULT_DEMO_CONFIG, null, 2);
-      }
-      showToast("Demo configuration loaded into form");
+      if (jsonInput) jsonInput.value = JSON.stringify(DEFAULT_DEMO_CONFIG, null, 2);
+      showToast("Demo config loaded.");
     };
 
     window.resetFirebaseConfigToLocal = async () => {
       localStorage.removeItem('payone_firebase_config');
       closeFirebaseConfigModal();
-      showToast("Reset to local memory storage mode");
-      fallbackLocalMode("User reset to local storage");
+      showToast("Switched to Local Privilege.");
+      fallbackLocalMode();
     };
 
-    // Initialize application with Firebase
     initFirebase();
   </script>
 
-  <!-- CORE SCRIPT: QR GENERATION, INTENTS & SLIDE-TO-PAY INTERACTION -->
+
+  <!-- CORE APPLICATION INTERACTION SCRIPT -->
   <script>
     let qrcodeInstance = null;
+    let currentActiveUpiUri = "";
 
-    // Toast helper
-    function showToast(msg, isError = false) {
+    function showToast(msg) {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
-      const toastIcon = document.getElementById('toastIcon');
-      
       toastMsg.textContent = msg;
-      if (isError) {
-        toastIcon.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4 text-rose-500"></i>';
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-3');
+      }, 2500);
+    }
+
+    function switchMainScreen(screen) {
+      const scrPay = document.getElementById('screenPay');
+      const scrLedger = document.getElementById('screenLedger');
+      const tabPay = document.getElementById('navTabPay');
+      const tabLedger = document.getElementById('navTabLedger');
+      const dockPay = document.getElementById('navDockPay');
+      const dockLedger = document.getElementById('navDockLedger');
+
+      if (screen === 'pay') {
+        scrPay.classList.remove('hidden');
+        scrLedger.classList.add('hidden');
+        tabPay.className = "flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition";
+        tabLedger.className = "flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition";
+        dockPay.className = "flex flex-col items-center gap-1 text-white";
+        dockLedger.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition";
       } else {
-        toastIcon.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 text-cred-accent"></i>';
+        scrPay.classList.add('hidden');
+        scrLedger.classList.remove('hidden');
+        tabLedger.className = "flex-1 py-1.5 rounded-lg text-black bg-white font-bold transition";
+        tabPay.className = "flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition";
+        dockLedger.className = "flex flex-col items-center gap-1 text-white";
+        dockPay.className = "flex flex-col items-center gap-1 text-neutral-500 hover:text-white transition";
+        renderLedger();
       }
       lucide.createIcons();
-
-      toast.classList.remove('opacity-0', 'translate-y-3');
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-3');
-      }, 3500);
     }
 
-    // Set Quick Amounts
-    function setAmount(val) {
-      document.getElementById('payAmount').value = Number(val).toFixed(2);
-      document.getElementById('sliderAmountLabel').textContent = Number(val).toFixed(2);
+    function togglePayeeConfig() {
+      const drawer = document.getElementById('payeeConfigDrawer');
+      drawer.classList.toggle('hidden');
+      lucide.createIcons();
     }
 
-    document.getElementById('payAmount').addEventListener('input', (e) => {
-      const v = parseFloat(e.target.value) || 0;
-      document.getElementById('sliderAmountLabel').textContent = v.toFixed(2);
-    });
-
-    // Comprehensive NPCI UPI VPA Validator & PSP Registry
-    const UPI_PSP_REGISTRY = {
-      'okhdfcbank': 'Google Pay (HDFC)',
-      'okaxis': 'Google Pay (Axis)',
-      'oksbi': 'Google Pay (SBI)',
-      'okicici': 'Google Pay (ICICI)',
-      'ybl': 'PhonePe (YES Bank)',
-      'ibl': 'PhonePe (ICICI Bank)',
-      'axl': 'PhonePe (Axis Bank)',
-      'phonepe': 'PhonePe UPI',
-      'phonepay': 'PhonePe UPI',
-      'paytm': 'Paytm Payments Bank',
-      'ptsbi': 'Paytm (SBI)',
-      'pthdfc': 'Paytm (HDFC)',
-      'ptaxis': 'Paytm (Axis)',
-      'ikwik': 'MobiKwik Wallet & UPI',
-      'mbk': 'MobiKwik UPI',
-      'mobikwik': 'MobiKwik UPI',
-      'upi': 'BHIM / NPCI Sovereign',
-      'apl': 'Amazon Pay (Axis Bank)',
-      'rapl': 'Amazon Pay (RBL)',
-      'fbl': 'CRED Pay (Federal Bank)',
-      'axisbank': 'Axis Mobile Pay',
-      'sbi': 'SBI YONO Pay',
-      'icici': 'iMobile ICICI',
-      'kotak': 'Kotak Mahindra Bank',
-      'barodampay': 'Bank of Baroda',
-      'indus': 'IndusInd Bank',
-      'federal': 'Federal Bank',
-      'idfcbank': 'IDFC FIRST Bank',
-      'postbank': 'India Post Payments Bank',
-      'citi': 'Citibank India',
-      'hsbc': 'HSBC India'
-    };
-
-    function validateUpiAddress(vpa) {
-      if (!vpa || typeof vpa !== 'string') {
-        return { isValid: false, reason: "UPI ID cannot be blank" };
-      }
-      const trimmed = vpa.trim().toLowerCase();
-
-      // RFC / NPCI UPI handle format: prefix@handle
-      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9.\-_]{2,64}$/;
-      if (!upiRegex.test(trimmed)) {
-        return { 
-          isValid: false, 
-          reason: "Invalid format. Expected: username@handle (e.g. 9876543210@paytm)" 
-        };
-      }
-
-      const parts = trimmed.split('@');
-      const username = parts[0];
-      const pspHandle = parts[1];
-
-      // Check for illegal contiguous special characters
-      if (/(\.{2,}|-{2,}|_{2,})/.test(username) || /^[\.\-_]|[\.\-_]$/.test(username)) {
-        return { isValid: false, reason: "UPI ID contains consecutive or boundary punctuation" };
-      }
-
-      // Check known PSP registry
-      const knownProvider = UPI_PSP_REGISTRY[pspHandle];
-      return {
-        isValid: true,
-        vpa: trimmed,
-        username,
-        handle: pspHandle,
-        provider: knownProvider || 'Recognized Banking PSP (' + pspHandle.toUpperCase() + ')'
-      };
-    }
-
-    function checkVpaInputLive() {
-      const input = document.getElementById('targetVpa');
-      const badge = document.getElementById('vpaValidationBadge');
-      const providerInfo = document.getElementById('vpaProviderInfo');
-      const val = input.value.trim();
-
-      if (!val) {
-        badge.className = "text-[10px] font-mono px-2 py-0.5 rounded border border-neutral-800 bg-neutral-900 text-neutral-400";
-        badge.textContent = "EMPTY";
-        providerInfo.textContent = "";
-        return false;
-      }
-
-      const result = validateUpiAddress(val);
-      if (result.isValid) {
-        badge.className = "text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800 bg-emerald-950/70 text-emerald-400";
-        badge.innerHTML = '<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>VALID UPI';
-        providerInfo.textContent = result.provider;
-        input.classList.remove('border-rose-500/70');
-        input.classList.add('border-emerald-500/50');
-        return true;
-      } else {
-        badge.className = "text-[10px] font-mono px-2 py-0.5 rounded border border-rose-800 bg-rose-950/70 text-rose-400";
-        badge.textContent = "INVALID FORMAT";
-        providerInfo.textContent = "";
-        input.classList.remove('border-emerald-500/50');
-        input.classList.add('border-rose-500/70');
-        return false;
-      }
-    }
-
-    function appendPspHandle(handle) {
-      const input = document.getElementById('targetVpa');
-      const current = input.value.trim();
-      if (current.includes('@')) {
-        const username = current.split('@')[0];
-        input.value = `${username}@${handle}`;
-      } else if (current) {
-        input.value = `${current}@${handle}`;
-      } else {
-        input.value = `payee@${handle}`;
-      }
-      checkVpaInputLive();
-      saveTargetPayee();
-    }
-
-    // Save Payee details with validation
     function saveTargetPayee() {
       const vpa = document.getElementById('targetVpa').value.trim();
       const name = document.getElementById('targetName').value.trim();
-      const validation = validateUpiAddress(vpa);
-      
-      if (!validation.isValid) {
-        showToast(validation.reason, true);
-        checkVpaInputLive();
+      if (!vpa || !vpa.includes('@')) {
+        showToast("Please enter a valid UPI VPA.");
         return;
       }
-      document.getElementById('cardPayeeDisplay').textContent = validation.vpa;
-      localStorage.setItem('youpi_vpa', validation.vpa);
-      localStorage.setItem('youpi_name', name);
-      checkVpaInputLive();
-      showToast(`Valid UPI saved (${validation.provider})`);
+      document.getElementById('cardPayeeDisplay').textContent = vpa;
+      document.getElementById('targetNameDisplay').textContent = name || 'PayOne Recipient';
+      document.getElementById('payeeConfigDrawer').classList.add('hidden');
+      showToast("Payee updated.");
     }
 
-    // Generate Standard NPCI UPI URI
+    function setAmount(val) {
+      document.getElementById('payAmount').value = val;
+      updateSliderAmount();
+    }
+
+    function updateSliderAmount() {
+      const amt = parseFloat(document.getElementById('payAmount').value) || 0;
+      document.getElementById('sliderAmountLabel').textContent = amt.toFixed(2);
+    }
+    document.getElementById('payAmount').addEventListener('input', updateSliderAmount);
+
     function constructUpiUri() {
-      const vpa = document.getElementById('targetVpa').value.trim() || "payone@upi";
-      const name = document.getElementById('targetName').value.trim() || "PayOne";
-      const amount = parseFloat(document.getElementById('payAmount').value) || 1.00;
-      const note = document.getElementById('payNote').value.trim() || "Payment via PayOne";
-      const txRef = 'TXN' + Date.now();
+      const vpa = document.getElementById('targetVpa').value.trim() || 'payone@upi';
+      const name = document.getElementById('targetName').value.trim() || 'PayOne';
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+      const note = document.getElementById('payNote').value.trim() || 'Payment via PayOne';
+      const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
-      // NPCI Standard Specification URI
-      return `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(name)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}&tr=${txRef}`;
+      const params = new URLSearchParams({
+        pa: vpa,
+        pn: name,
+        am: amount.toFixed(2),
+        cu: 'INR',
+        tn: note,
+        tr: orderId
+      });
+      return `upi://pay?${params.toString()}`;
     }
 
-    // Launch Checkout & Generate Dynamic QR with VPA Validation Guard
     function launchPaymentModal() {
-      const vpa = document.getElementById('targetVpa').value.trim();
-      const amount = parseFloat(document.getElementById('payAmount').value) || 1.00;
-      
-      const validation = validateUpiAddress(vpa);
-      if (!validation.isValid) {
-        showToast("Cannot checkout: " + validation.reason, true);
-        checkVpaInputLive();
+      const amount = parseFloat(document.getElementById('payAmount').value) || 0;
+      if (amount <= 0) {
+        showToast("Please enter an amount greater than 0");
         return;
       }
 
-      if (amount <= 0 || isNaN(amount)) {
-        showToast("Please enter a valid amount greater than ₹0", true);
-        return;
-      }
-
-      const upiUri = constructUpiUri();
-      window.currentActiveUpiUri = upiUri;
-
-      const payeeName = document.getElementById('targetName').value.trim() || "PayOne";
+      currentActiveUpiUri = constructUpiUri();
       document.getElementById('modalAmount').textContent = amount.toFixed(2);
-      document.getElementById('modalPayee').textContent = validation.vpa;
-      const modalPayeeNameEl = document.getElementById('modalPayeeName');
-      if (modalPayeeNameEl) {
-        modalPayeeNameEl.textContent = payeeName;
-      }
+      document.getElementById('modalPayee').textContent = document.getElementById('targetVpa').value.trim() || 'payone@upi';
 
-      // Render Dynamic QR using QRCode.js
-      const qrContainer = document.getElementById('qrContainer');
-      qrContainer.innerHTML = '';
-      qrcodeInstance = new QRCode(qrContainer, {
-        text: upiUri,
-        width: 190,
-        height: 190,
+      const container = document.getElementById('qrContainer');
+      container.innerHTML = '';
+      qrcodeInstance = new QRCode(container, {
+        text: currentActiveUpiUri,
+        width: 180,
+        height: 180,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.M
       });
 
-      document.getElementById('bankUtrInput').value = '';
       document.getElementById('paymentModal').classList.remove('hidden');
       lucide.createIcons();
     }
@@ -1493,179 +1047,48 @@
       document.getElementById('paymentModal').classList.add('hidden');
     }
 
-    // Direct Intent triggers for Real Mobile Devices
     function triggerUniversalUpiIntent() {
-      const upiUri = window.currentActiveUpiUri || constructUpiUri();
-      window.location.href = upiUri;
-      showToast("Handing over to mobile UPI app...");
+      if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
+      window.location.href = currentActiveUpiUri;
     }
-
-    // Extended External App Deep-Linking Scheme Registry
-    const EXTERNAL_APP_SCHEMES = {
-      paytm: {
-        scheme: 'paytmmp://pay',
-        altScheme: 'paytm://pay',
-        androidIntentPackage: 'net.one97.paytm',
-        name: 'Paytm',
-        pkg: 'net.one97.paytm'
-      },
-      phonepe: {
-        scheme: 'phonepe://pay',
-        altScheme: 'phonepe://upi/pay',
-        androidIntentPackage: 'com.phonepe.app',
-        name: 'PhonePe',
-        pkg: 'com.phonepe.app'
-      },
-      phonepay: {
-        scheme: 'phonepe://pay',
-        altScheme: 'phonepe://upi/pay',
-        androidIntentPackage: 'com.phonepe.app',
-        name: 'PhonePe',
-        pkg: 'com.phonepe.app'
-      },
-      mobikwik: {
-        scheme: 'mobikwik://pay',
-        altScheme: 'mobikwik://upi/pay',
-        androidIntentPackage: 'com.mobikwik_new',
-        name: 'MobiKwik',
-        pkg: 'com.mobikwik_new'
-      },
-      gpay: {
-        scheme: 'tez://upi/pay',
-        altScheme: 'gpay://upi/pay',
-        androidIntentPackage: 'com.google.android.apps.nbu.paisa.user',
-        name: 'Google Pay',
-        pkg: 'com.google.android.apps.nbu.paisa.user'
-      },
-      bhim: {
-        scheme: 'bhim://pay',
-        altScheme: 'upi://pay',
-        androidIntentPackage: 'in.org.npci.upiapp',
-        name: 'BHIM NPCI',
-        pkg: 'in.org.npci.upiapp'
-      },
-      cred: {
-        scheme: 'credpay://upi/pay',
-        altScheme: 'cred://pay',
-        androidIntentPackage: 'com.dreamplug.androidapp',
-        name: 'CRED Pay',
-        pkg: 'com.dreamplug.androidapp'
-      },
-      amazon: {
-        scheme: 'amazonpay://upi/pay',
-        altScheme: 'amazon://pay',
-        androidIntentPackage: 'in.amazon.mShop.android.shopping',
-        name: 'Amazon Pay',
-        pkg: 'in.amazon.mShop.android.shopping'
-      },
-      navi: {
-        scheme: 'navi://pay',
-        altScheme: 'upi://pay',
-        androidIntentPackage: 'com.naviapp',
-        name: 'Navi UPI',
-        pkg: 'com.naviapp'
-      },
-      whatsapp: {
-        scheme: 'whatsapp://pay',
-        altScheme: 'upi://pay',
-        androidIntentPackage: 'com.whatsapp',
-        name: 'WhatsApp Pay',
-        pkg: 'com.whatsapp'
-      }
-    };
 
     function triggerAppIntent(appType) {
-      const baseUri = window.currentActiveUpiUri || constructUpiUri();
-      let key = (appType || '').toLowerCase().trim();
-      if (key === 'phonepay') key = 'phonepe';
-      const appConfig = EXTERNAL_APP_SCHEMES[key];
+      if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
+      const rawParams = currentActiveUpiUri.replace('upi://pay?', '');
+      let intentUri = currentActiveUpiUri;
 
-      if (!appConfig) {
-        window.location.href = baseUri;
-        showToast("Invoking default UPI handler...");
-        return;
+      if (appType === 'paytm') {
+        intentUri = `paytmmp://pay?${rawParams}`;
+      } else if (appType === 'phonepe') {
+        intentUri = `phonepe://pay?${rawParams}`;
+      } else if (appType === 'mobikwik') {
+        intentUri = `mobikwik://upi/pay?${rawParams}`;
       }
 
-      // Convert standard upi:// parameters to target application scheme
-      const queryPart = baseUri.replace(/^upi:\/\/pay\?/, '');
-      const isAndroid = /Android/i.test(navigator.userAgent);
-
-      // Launch target app intent with automatic fallback to generic upi://
-      showToast(`Invoking ${appConfig.name}...`);
-      
-      const fallbackTimer = setTimeout(() => {
-        // If app isn't installed or scheme not registered, fallback to universal intent
-        window.location.href = baseUri;
-      }, 1500);
-
-      try {
-        if (isAndroid && (appConfig.androidIntentPackage || appConfig.pkg)) {
-          const targetPkg = appConfig.androidIntentPackage || appConfig.pkg;
-          window.location.href = `intent://pay?${queryPart}#Intent;scheme=upi;package=${targetPkg};end`;
-        } else {
-          window.location.href = `${appConfig.scheme}?${queryPart}`;
-        }
-      } catch (err) {
-        clearTimeout(fallbackTimer);
-        window.location.href = baseUri;
-      }
+      window.location.href = intentUri;
+      setTimeout(() => {
+        window.location.href = currentActiveUpiUri;
+      }, 750);
     }
 
-    // Copy Raw UPI URI for external apps (chat, notes, external terminals)
     function copyUpiPaymentLink() {
-      const upiUri = window.currentActiveUpiUri || constructUpiUri();
-      
-      const tempInput = document.createElement("textarea");
-      tempInput.value = upiUri;
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      try {
-        document.execCommand('copy');
-        showToast("UPI payment link copied to clipboard");
-      } catch (err) {
-        showToast("Could not copy link", true);
-      } finally {
-        document.body.removeChild(tempInput);
-      }
+      if (!currentActiveUpiUri) currentActiveUpiUri = constructUpiUri();
+      navigator.clipboard.writeText(currentActiveUpiUri).then(() => {
+        showToast("UPI link copied.");
+      }).catch(() => {
+        showToast(currentActiveUpiUri);
+      });
     }
 
-    // Web Share API to hand off directly to any external messaging or banking app
-    async function shareUpiToExternalApp() {
-      const upiUri = window.currentActiveUpiUri || constructUpiUri();
-      const amount = document.getElementById('modalAmount').textContent;
-      const payee = document.getElementById('modalPayee').textContent;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Pay ₹${amount} via UPI`,
-            text: `Payment request of ₹${amount} to ${payee}`,
-            url: upiUri
-          });
-          showToast("Payment link shared to external app");
-        } catch (err) {
-          if (err.name !== 'AbortError') {
-            copyUpiPaymentLink();
-          }
-        }
-      } else {
-        copyUpiPaymentLink();
-      }
-    }
-
-    // Confirm real payment by saving UTR
     function confirmRealPaymentWithUtr() {
       const utr = document.getElementById('bankUtrInput').value.trim();
       const amount = parseFloat(document.getElementById('modalAmount').textContent) || 0;
       const payee = document.getElementById('modalPayee').textContent;
-      const payeeName = document.getElementById('modalPayeeName').textContent;
-      
+
       if (!utr || utr.length < 6) {
-        showToast("Please enter a valid 12-digit Bank UTR / Reference No.", true);
+        showToast("Enter a valid 12-digit UTR.");
         return;
       }
-
-      const method = window.lastTriggeredApp || 'UPI';
 
       const paymentRecord = {
         orderId: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
@@ -1673,104 +1096,67 @@
         amount: amount,
         currency: 'INR',
         payee: payee,
-        payeeName: payeeName,
-        method: method.toUpperCase(),
+        method: 'UPI',
         timestamp: Date.now(),
         dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'SETTLED'
       };
 
-      if (window.persistPayment) {
-        window.persistPayment(paymentRecord);
-      }
+      if (window.persistPayment) window.persistPayment(paymentRecord);
       closePaymentModal();
-      showToast("Payment record saved: UTR " + utr);
+      showToast("Payment recorded: UTR " + utr);
     }
 
-    // Helper: App Method badge renderer
-    function getMethodBadge(method) {
-      const m = (method || 'UPI').toUpperCase();
-      if (m.includes('PAYTM')) {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-950/80 border border-sky-800 text-sky-400">Paytm</span>`;
-      }
-      if (m.includes('PHONEPE') || m.includes('PHONEPAY')) {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-950/80 border border-purple-800 text-purple-400">PhonePe</span>`;
-      }
-      if (m.includes('MOBIKWIK')) {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-950/80 border border-cyan-800 text-cyan-400">MobiKwik</span>`;
-      }
-      if (m.includes('GPAY') || m.includes('GOOGLE')) {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-400">GPay</span>`;
-      }
-      return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-900 border border-neutral-800 text-cred-accent">UPI P2P</span>`;
-    }
-
-    // Copy single UTR to clipboard
-    window.copyUtrToClipboard = function(utr) {
-      if (!utr) return;
-      navigator.clipboard.writeText(utr).then(() => {
-        showToast("Copied UTR: " + utr);
-      }).catch(() => {
-        showToast("UTR: " + utr);
-      });
-    };
-
-    // Render Recent Ledger & Stats
     function renderLedger() {
-      const tbody = document.getElementById('ledgerBody');
+      const container = document.getElementById('ledgerBody');
       const statTotalVol = document.getElementById('statTotalVol');
       const statCount = document.getElementById('statCount');
-      
+      const tabBadge = document.getElementById('tabCountBadge');
+
       const records = window.localLedger || [];
       if (statCount) statCount.textContent = records.length;
+      if (tabBadge) tabBadge.textContent = records.length;
 
       let sum = 0;
       records.forEach(r => sum += (Number(r.amount) || 0));
       if (statTotalVol) statTotalVol.textContent = '₹' + sum.toFixed(2);
 
-      if (!tbody) return;
+      if (!container) return;
 
       if (records.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="py-8 text-center text-neutral-500 font-mono text-xs">
-              No payment records found yet. Initiate a payment above to see real-time sync.
-            </td>
-          </tr>
+        container.innerHTML = `
+          <div class="py-8 text-center text-neutral-600 font-mono text-xs">
+            No transactions recorded yet.
+          </div>
         `;
         return;
       }
 
-      tbody.innerHTML = records.map(item => `
-        <tr class="hover:bg-neutral-900/60 transition group">
-          <td class="py-3 text-neutral-400 font-mono text-[11px]">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-          <td class="py-3 text-neutral-200 font-mono text-[11px]">
-            <div class="flex items-center gap-1.5">
-              ${getMethodBadge(item.method)}
-              <span class="bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 text-neutral-300">${item.utr || 'DIRECT-P2P'}</span>
-              <button onclick="copyUtrToClipboard('${item.utr || ''}')" title="Copy UTR" class="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-white transition">
-                <i data-lucide="copy" class="w-3 h-3"></i>
-              </button>
+      container.innerHTML = records.map(item => `
+        <div class="py-3 flex items-center justify-between group">
+          <div class="space-y-0.5">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-mono font-bold text-white tracking-wider">${item.utr || 'DIRECT-P2P'}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#141417] hairline-border text-neutral-400">${item.method || 'UPI'}</span>
             </div>
-          </td>
-          <td class="py-3 text-white font-mono font-bold text-xs">₹${Number(item.amount).toFixed(2)}</td>
-          <td class="py-3 text-right">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono uppercase bg-emerald-950/70 border border-emerald-800 text-emerald-400">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span> SETTLED
-            </span>
-          </td>
-          <td class="py-3 text-right pl-2">
-            <button onclick="deletePaymentRecord('${item._id || item.utr || ''}')" title="Delete record" class="opacity-0 group-hover:opacity-100 text-neutral-600 hover:text-rose-400 transition p-1">
+            <div class="text-[10px] font-mono text-neutral-500">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${item.payee || 'payone@upi'}</div>
+          </div>
+          <div class="flex items-center space-x-3 text-right">
+            <div>
+              <span class="text-xs font-mono font-bold text-white block">+₹${Number(item.amount).toFixed(2)}</span>
+              <span class="text-[9px] font-mono text-neutral-400 uppercase tracking-widest block">SETTLED</span>
+            </div>
+            <button onclick="deletePaymentRecord('${item._id || item.utr || ''}')" class="text-neutral-600 hover:text-white transition p-1" title="Delete">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
-          </td>
-        </tr>
+          </div>
+        </div>
       `).join('');
 
       lucide.createIcons();
     }
 
-    // Tactile CRED "Slide to Pay" Slider logic (mouse + touch)
+    // Slide-to-pay slider logic
     function setupSlider() {
       const track = document.getElementById('sliderTrack');
       const thumb = document.getElementById('sliderThumb');
@@ -1781,31 +1167,28 @@
       function updateBounds() {
         maxTranslate = track.clientWidth - thumb.clientWidth - 12;
       }
-      window.addEventListener('resize', updateBounds);
       updateBounds();
+      window.addEventListener('resize', updateBounds);
 
       function onStart(e) {
         isDragging = true;
-        startX = (e.clientX || (e.touches && e.touches[0].clientX)) - thumb.offsetLeft;
+        startX = (e.clientX !== undefined) ? e.clientX : e.touches[0].clientX;
         thumb.style.transition = 'none';
       }
 
       function onMove(e) {
         if (!isDragging) return;
-        const currentX = e.clientX || (e.touches && e.touches[0].clientX);
-        let moveX = currentX - startX;
-        if (moveX < 0) moveX = 0;
-        if (moveX > maxTranslate) moveX = maxTranslate;
-        thumb.style.transform = `translateX(${moveX}px)`;
+        const currentX = (e.clientX !== undefined) ? e.clientX : e.touches[0].clientX;
+        let delta = currentX - startX;
+        if (delta < 0) delta = 0;
+        if (delta > maxTranslate) delta = maxTranslate;
 
-        // Unlocked when pulled over 85%
-        if (moveX >= maxTranslate * 0.88) {
+        thumb.style.transform = `translateX(${delta}px)`;
+
+        if (delta >= maxTranslate * 0.92) {
           isDragging = false;
-          thumb.style.transform = `translateX(${maxTranslate}px)`;
-          setTimeout(() => {
-            resetSlider();
-            launchPaymentModal();
-          }, 100);
+          resetSlider();
+          launchPaymentModal();
         }
       }
 
@@ -1816,7 +1199,7 @@
       }
 
       function resetSlider() {
-        thumb.style.transition = 'transform 0.25s ease-out';
+        thumb.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
         thumb.style.transform = 'translateX(0px)';
       }
 
@@ -1829,43 +1212,10 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    // Init UI on Window Load
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       setupSlider();
-      
-      // Live validation listener on VPA input
-      const vpaInput = document.getElementById('targetVpa');
-      if (vpaInput) {
-        vpaInput.addEventListener('input', checkVpaInputLive);
-      }
-
-      // Load stored VPA preference if existing or default to PayOne
-      const savedVpa = localStorage.getItem('youpi_vpa');
-      const savedName = localStorage.getItem('youpi_name');
-      if (savedVpa) {
-        document.getElementById('targetVpa').value = savedVpa;
-        document.getElementById('cardPayeeDisplay').textContent = savedVpa;
-      } else {
-        document.getElementById('targetVpa').value = "payone@upi";
-        document.getElementById('cardPayeeDisplay').textContent = "payone@upi";
-      }
-      if (savedName) {
-        document.getElementById('targetName').value = savedName;
-      } else {
-        document.getElementById('targetName').value = "PayOne";
-      }
-
-      checkVpaInputLive();
-
-      // Load cached payments
-      try {
-        const cached = localStorage.getItem('youpi_payments');
-        if (cached) {
-          window.localLedger = JSON.parse(cached);
-          renderLedger();
-        }
-      } catch (e) {}
+      updateSliderAmount();
     });
   </script>
 </body>

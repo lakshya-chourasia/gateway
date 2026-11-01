@@ -312,6 +312,21 @@ export class CheckoutServer {
         return;
       }
 
+      // Standalone Sovereign Scan & Pay Edition: GET / or /scan or /payone
+      if (pathname === '/' || pathname === '/scan' || pathname === '/payone' || pathname === '/checkout.html') {
+        const rootCheckoutPath = path.resolve(__dirname, '../../../checkout.html');
+        if (fs.existsSync(rootCheckoutPath)) {
+          const content = fs.readFileSync(rootCheckoutPath, 'utf8');
+          res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(content);
+          return;
+        }
+      }
+
       // Transparent API Proxy: /api/* -> Payment Core REST API
       if (pathname.startsWith('/api/')) {
         const targetUrl = new URL(req.url, this.apiBaseUrl);
