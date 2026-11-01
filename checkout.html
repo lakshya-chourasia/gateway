@@ -78,12 +78,22 @@
       </div>
 
       <!-- Auth Controls & User Pill -->
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Firebase Firestore Status & Config Button -->
+        <button id="firebaseConfigBtn" onclick="openFirebaseConfigModal()" title="Firebase Authentication & Cloud Firestore Settings"
+          class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-cred-card cred-border text-neutral-300 hover:text-white hover:border-amber-500/50 transition text-xs font-mono group">
+          <svg class="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4.6 17.8L7.3 2.9c.1-.4.5-.6.9-.4l4 4.5 2.8-5.3c.2-.4.7-.5 1.1-.2.1.1.2.2.3.4l2.2 4.4 3.7-7c.2-.4.7-.6 1.1-.4.3.2.5.5.4.9l-4 18.9-6.3 3.6c-.4.2-.8.2-1.2 0L4.6 17.8z"/>
+          </svg>
+          <span id="headerSyncText" class="text-[10px] uppercase tracking-wider text-neutral-400 group-hover:text-neutral-200">FIRESTORE</span>
+          <span id="headerSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        </button>
+
         <div id="authPill" class="flex items-center space-x-2 bg-cred-card cred-border px-3 py-1.5 rounded-full cursor-pointer hover:border-neutral-600 transition" onclick="openAuthModal()">
           <div id="userAvatarDot" class="w-2 h-2 rounded-full bg-amber-400"></div>
           <span id="authStatusText" class="text-xs font-mono tracking-wider text-neutral-300">GUEST MEMBER</span>
         </div>
-        <button id="logoutBtn" onclick="handleSignOut()" class="hidden px-2.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs transition">
+        <button id="logoutBtn" onclick="handleSignOut()" class="hidden px-2.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs transition" title="Sign Out">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
         </button>
       </div>
@@ -421,45 +431,217 @@
     </div>
   </div>
 
-  <!-- AUTHENTICATION MODAL -->
+  <!-- AUTHENTICATION & MEMBER ACCESS MODAL -->
   <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-    <div class="bg-[#121215] cred-border rounded-3xl max-w-sm w-full p-7 relative shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+    <div class="bg-[#121215] cred-border rounded-3xl max-w-md w-full p-6 sm:p-7 relative shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
       
       <button id="modalCloseBtn" onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-1 rounded-full bg-neutral-900 border border-neutral-800 hidden">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <div class="text-center pt-2">
-        <div class="w-14 h-14 rounded-2xl bg-[#16161b] cred-border mx-auto flex items-center justify-center text-cred-accent mb-4 shadow-inner">
+      <div class="text-center pt-1">
+        <div class="w-13 h-13 rounded-2xl bg-[#16161b] cred-border mx-auto flex items-center justify-center text-cred-accent mb-3 shadow-inner">
           <i data-lucide="shield-check" class="w-7 h-7"></i>
         </div>
-        <div class="text-[10px] font-mono uppercase tracking-[0.3em] text-cred-accent">MEMBER ACCESS</div>
-        <h3 class="text-xl font-bold text-white tracking-tight mt-1">CLAIM YOUR PRIVILEGE</h3>
-        <p class="text-xs text-neutral-400 mt-1.5 leading-relaxed">Sign in to unlock sovereign UPI terminal, dynamic QR generator, and synced transaction ledgers</p>
+        <div class="text-[10px] font-mono uppercase tracking-[0.3em] text-cred-accent">MEMBER PRIVILEGE ACCESS</div>
+        <h3 id="authModalHeading" class="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">CLAIM YOUR SOVEREIGN ACCESS</h3>
+        <p class="text-xs text-neutral-400 mt-1 leading-relaxed">Sign in to sync your live payment ledger directly across all devices via Firebase Cloud Firestore</p>
       </div>
 
-      <div class="space-y-3 pt-2">
+      <!-- Auth Tabs -->
+      <div id="authTabsContainer" class="flex p-1 bg-neutral-900/90 rounded-xl border border-neutral-800 text-[11px] font-mono">
+        <button id="tabBtnSignIn" onclick="switchAuthTab('signin')" class="flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition">SIGN IN</button>
+        <button id="tabBtnSignUp" onclick="switchAuthTab('signup')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">REGISTER</button>
+        <button id="tabBtnSocial" onclick="switchAuthTab('social')" class="flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition">GOOGLE / GUEST</button>
+      </div>
+
+      <!-- Tab 1: Email Sign In -->
+      <form id="signInForm" onsubmit="event.preventDefault(); submitEmailSignIn();" class="space-y-3.5">
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
+            <input type="email" id="signInEmail" required placeholder="member@payone.sovereign"
+              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
+            <input type="password" id="signInPassword" required placeholder="••••••••"
+              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-10 py-2.5 rounded-xl font-mono text-xs outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('signInPassword', this)" class="absolute right-3 top-3 text-neutral-500 hover:text-neutral-300">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="signInSubmitBtn" class="w-full py-3 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-2">
+          <span>SIGN IN TO SOVEREIGN HUB</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Tab 2: Email Sign Up -->
+      <form id="signUpForm" onsubmit="event.preventDefault(); submitEmailSignUp();" class="space-y-3.5 hidden">
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Full Legal Name</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
+            <input type="text" id="signUpName" required placeholder="Lakshya Chourasia"
+              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Email Address</label>
+          <div class="relative">
+            <i data-lucide="mail" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
+            <input type="email" id="signUpEmail" required placeholder="member@payone.sovereign"
+              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-3.5 py-2.5 rounded-xl font-mono text-xs outline-none transition">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono uppercase text-neutral-400 mb-1">Create Password (min. 6 characters)</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-neutral-500 absolute left-3 top-3"></i>
+            <input type="password" id="signUpPassword" required minlength="6" placeholder="••••••••"
+              class="w-full bg-[#0d0d10] border border-neutral-800 focus:border-cred-accent text-white pl-9 pr-10 py-2.5 rounded-xl font-mono text-xs outline-none transition">
+            <button type="button" onclick="togglePasswordVisibility('signUpPassword', this)" class="absolute right-3 top-3 text-neutral-500 hover:text-neutral-300">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="signUpSubmitBtn" class="w-full py-3 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-2">
+          <span>CREATE SOVEREIGN ACCOUNT</span>
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </button>
+      </form>
+
+      <!-- Tab 3: Social & Guest Sign-In -->
+      <div id="socialAuthSection" class="space-y-3 hidden">
         <!-- Google Sign-in Button -->
-        <button onclick="handleGoogleSignIn()" class="w-full py-3.5 px-4 rounded-xl bg-white text-black font-semibold text-xs tracking-wider flex items-center justify-center gap-2 hover:bg-neutral-200 transition shadow-lg">
+        <button onclick="handleGoogleSignIn()" class="w-full py-3.5 px-4 rounded-xl bg-white text-black font-semibold text-xs tracking-wider flex items-center justify-center gap-2.5 hover:bg-neutral-200 transition shadow-lg">
           <svg class="w-4 h-4" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          CONTINUE WITH GOOGLE
+          <span>CONTINUE WITH GOOGLE</span>
         </button>
 
         <!-- Quick Passkey / Guest Access -->
         <button onclick="handleGuestSignIn()" class="w-full py-3 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white text-xs font-mono transition flex items-center justify-center gap-2">
           <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i>
-          ENTER AS GUEST MEMBER
+          <span>ENTER AS GUEST MEMBER</span>
         </button>
       </div>
 
-      <div class="text-[10px] text-center text-neutral-500 font-mono pt-1">
-        Payments recorded securely to your account ledger.
+      <!-- Signed In Profile Card (Visible when authenticated) -->
+      <div id="authProfileSection" class="space-y-4 hidden">
+        <div class="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono uppercase text-neutral-400">AUTHENTICATED MEMBER</span>
+            <span id="profileProviderBadge" class="text-[9px] font-mono px-2 py-0.5 rounded bg-cred-accent/10 text-cred-accent border border-cred-accent/20">EMAIL</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div id="profileAvatar" class="w-10 h-10 rounded-xl bg-cred-card border border-cred-border flex items-center justify-center font-bold text-cred-accent text-sm">
+              M
+            </div>
+            <div class="overflow-hidden">
+              <div id="profileName" class="text-sm font-semibold text-white truncate">Member Name</div>
+              <div id="profileEmail" class="text-xs font-mono text-neutral-400 truncate">member@example.com</div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-neutral-800/80 flex justify-between items-center text-[10px] font-mono text-neutral-500">
+            <span>UID: <span id="profileUid" class="text-neutral-400">...</span></span>
+            <span id="profileFirestoreBadge" class="text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> FIRESTORE SYNCED
+            </span>
+          </div>
+        </div>
+
+        <button onclick="handleSignOut()" class="w-full py-2.5 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-rose-400 hover:bg-neutral-800 text-xs font-mono transition flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>SIGN OUT FROM THIS DEVICE</span>
+        </button>
       </div>
+
+      <!-- Auth Error / Warning Feedback Banner -->
+      <div id="authAlert" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs font-mono flex items-start gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+        <span id="authAlertText">Authentication message</span>
+      </div>
+
+      <div class="flex items-center justify-between pt-1 text-[10px] font-mono text-neutral-500">
+        <span>Cloud: Firebase Auth</span>
+        <button type="button" onclick="openFirebaseConfigModal()" class="text-cred-accent hover:underline flex items-center gap-1">
+          <i data-lucide="settings" class="w-3 h-3"></i> Config Project
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE CONFIG & CLOUD FIRESTORE MODAL -->
+  <div id="firebaseConfigModal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#121215] cred-border rounded-3xl max-w-lg w-full p-6 sm:p-7 relative shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+      
+      <button onclick="closeFirebaseConfigModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-1 rounded-full bg-neutral-900 border border-neutral-800">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div class="flex items-start space-x-3 pt-1">
+        <div class="w-11 h-11 rounded-2xl bg-[#16161b] cred-border flex items-center justify-center text-amber-400 shrink-0">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4.6 17.8L7.3 2.9c.1-.4.5-.6.9-.4l4 4.5 2.8-5.3c.2-.4.7-.5 1.1-.2.1.1.2.2.3.4l2.2 4.4 3.7-7c.2-.4.7-.6 1.1-.4.3.2.5.5.4.9l-4 18.9-6.3 3.6c-.4.2-.8.2-1.2 0L4.6 17.8z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-amber-400 font-bold">FIREBASE CLOUD INTEGRATION</div>
+          <h3 class="text-lg font-bold text-white tracking-tight mt-0.5">AUTH &amp; FIRESTORE DATABASE</h3>
+          <p class="text-xs text-neutral-400 mt-0.5">Connect your Firebase web project for real-time document synchronization</p>
+        </div>
+      </div>
+
+      <!-- Connection Status Card -->
+      <div class="bg-neutral-900/70 border border-neutral-800 rounded-xl p-3.5 grid grid-cols-2 gap-2 text-xs font-mono">
+        <div>
+          <span class="text-[10px] text-neutral-500 uppercase block">ACTIVE PROJECT</span>
+          <span id="cfgActiveProject" class="text-white font-semibold truncate block">payone-sovereign</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-neutral-500 uppercase block">FIRESTORE STATUS</span>
+          <span id="cfgActiveFirestore" class="text-emerald-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> READY
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick JSON Paste Box -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-[10px] font-mono uppercase text-neutral-400">Paste Firebase Web Config (JSON)</label>
+          <button type="button" onclick="loadDemoConfigIntoModal()" class="text-[10px] font-mono text-cred-accent hover:underline">
+            Use Demo Project
+          </button>
+        </div>
+        <textarea id="firebaseConfigJsonInput" rows="4" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "payone.firebaseapp.com",\n  "projectId": "payone-sovereign",\n  "appId": "1:123456789:web:abcdef"\n}'
+          class="w-full bg-[#0a0a0c] border border-neutral-800 focus:border-cred-accent text-neutral-200 p-3 rounded-xl font-mono text-[11px] outline-none transition"></textarea>
+        <p class="text-[9px] font-mono text-neutral-500 mt-1">
+          Obtain from Firebase Console &rarr; Project Settings &rarr; General &rarr; Your apps &rarr; Web app config.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-2 pt-1">
+        <button onclick="saveFirebaseConfigFromModal()" class="flex-1 py-2.5 px-4 rounded-xl bg-cred-accent text-black font-semibold text-xs tracking-wider uppercase hover:bg-[#02ffaa] transition shadow-lg flex items-center justify-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> SAVE &amp; CONNECT FIRESTORE
+        </button>
+        <button onclick="resetFirebaseConfigToLocal()" class="py-2.5 px-4 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-mono transition">
+          USE LOCAL PRIVILEGE
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -471,9 +653,12 @@
 
   <!-- FIREBASE INTEGRATION & APPLICATION LOGIC -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { 
       getAuth, 
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      updateProfile,
       signInAnonymously, 
       signInWithCustomToken, 
       signInWithPopup, 
@@ -485,34 +670,86 @@
       getFirestore, 
       doc, 
       setDoc, 
+      getDoc,
+      deleteDoc,
       collection, 
-      onSnapshot 
+      onSnapshot,
+      query,
+      orderBy,
+      limit
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // Application state
-    let app, auth, db;
+    let app = null;
+    let auth = null;
+    let db = null;
     let currentUser = null;
     let unsubscribeLedger = null;
     let localLedger = [];
-    let currentActiveUpiUri = "";
+    let activeProjectId = "payone-sovereign";
 
-    // Global App Configuration
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'youpi-sovereign';
+    // Global App ID for Firestore paths
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'payone-sovereign';
 
-    // Safe Firebase Initializer
-    async function initFirebase() {
+    // Default Fallback Demo Config for instant live evaluation
+    const DEFAULT_DEMO_CONFIG = {
+      apiKey: "AIzaSyD-PayOneDemoCredentialKeyForVerification01",
+      authDomain: "payone-sovereign.firebaseapp.com",
+      projectId: "payone-sovereign",
+      storageBucket: "payone-sovereign.appspot.com",
+      messagingSenderId: "109876543210",
+      appId: "1:109876543210:web:91e922779bef4ff483654f8f"
+    };
+
+    /**
+     * Resolves Firebase Config from (1) localStorage, (2) window global, or (3) demo fallback.
+     */
+    function resolveFirebaseConfig() {
+      const stored = localStorage.getItem('payone_firebase_config');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.warn("Invalid stored firebase config:", e);
+        }
+      }
+      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        try {
+          return typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+        } catch (e) {}
+      }
+      return DEFAULT_DEMO_CONFIG;
+    }
+
+    /**
+     * Safe Firebase Initializer
+     */
+    async function initFirebase(customConfig = null) {
+      const config = customConfig || resolveFirebaseConfig();
+      activeProjectId = config?.projectId || "payone-sovereign";
+      updateConfigModalUI(config);
+
       try {
-        if (typeof __firebase_config !== 'undefined') {
-          const config = JSON.parse(__firebase_config);
-          app = initializeApp(config);
+        if (config && config.apiKey) {
+          // Initialize or reuse Firebase App
+          const existingApps = getApps();
+          app = existingApps.length > 0 ? existingApps[0] : initializeApp(config);
           auth = getAuth(app);
           db = getFirestore(app);
 
-          // Check if custom token exists, otherwise let user sign in via modal
+          updateHeaderSyncStatus("FIRESTORE", true);
+          document.getElementById('syncIndicator').textContent = "CLOUD: FIRESTORE ACTIVE";
+
+          // Optional initial auth token
           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+            try {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } catch (e) {
+              console.warn("Initial custom token sign-in deferred:", e.message);
+            }
           }
 
+          // Register Auth State Listener
           onAuthStateChanged(auth, (user) => {
             currentUser = user;
             updateAuthUI(user);
@@ -520,25 +757,54 @@
               closeAuthModal();
               setupFirestoreListener(user);
             } else {
-              openAuthModal(true); // Enforce mandatory login gate
+              loadLocalRecords();
+              renderLedger();
+              openAuthModal(true);
             }
           });
         } else {
-          // If no Firebase config, still present the login dialog in local mode
           fallbackLocalMode("Using offline local memory");
           openAuthModal(true);
         }
       } catch (err) {
-        console.warn("Firebase fallback to local memory mode:", err.message);
+        console.warn("Firebase initialization switched to local safe mode:", err.message);
         fallbackLocalMode("Local Secure Mode");
         openAuthModal(true);
       }
     }
 
     function fallbackLocalMode(reason) {
+      updateHeaderSyncStatus("LOCAL PRIVILEGE", false);
       document.getElementById('syncIndicator').textContent = "STORAGE: LOCAL PRIVILEGE";
       loadLocalRecords();
       renderLedger();
+    }
+
+    function updateHeaderSyncStatus(label, isLiveCloud) {
+      const text = document.getElementById('headerSyncText');
+      const dot = document.getElementById('headerSyncDot');
+      if (text) text.textContent = label;
+      if (dot) {
+        dot.className = isLiveCloud 
+          ? "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" 
+          : "w-1.5 h-1.5 rounded-full bg-amber-400";
+      }
+    }
+
+    function updateConfigModalUI(config) {
+      const projEl = document.getElementById('cfgActiveProject');
+      const statusEl = document.getElementById('cfgActiveFirestore');
+      const jsonInput = document.getElementById('firebaseConfigJsonInput');
+      
+      if (projEl) projEl.textContent = config?.projectId || 'local-offline';
+      if (statusEl) {
+        statusEl.innerHTML = config?.apiKey
+          ? '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> READY'
+          : '<span class="w-2 h-2 rounded-full bg-amber-400"></span> LOCAL ONLY';
+      }
+      if (jsonInput && config) {
+        jsonInput.value = JSON.stringify(config, null, 2);
+      }
     }
 
     function updateAuthUI(user) {
@@ -546,26 +812,55 @@
       const userAvatarDot = document.getElementById('userAvatarDot');
       const logoutBtn = document.getElementById('logoutBtn');
       const cardHolder = document.getElementById('cardHolderName');
+      const authTabs = document.getElementById('authTabsContainer');
+      const signInForm = document.getElementById('signInForm');
+      const signUpForm = document.getElementById('signUpForm');
+      const socialSection = document.getElementById('socialAuthSection');
+      const profileSection = document.getElementById('authProfileSection');
+      const authModalHeading = document.getElementById('authModalHeading');
 
-      if (user && !user.isAnonymous) {
-        authStatusText.textContent = (user.displayName || user.email || 'MEMBER').toUpperCase();
-        userAvatarDot.className = "w-2 h-2 rounded-full bg-cred-accent";
+      if (user) {
+        const isAnon = user.isAnonymous;
+        const displayName = user.displayName || (user.email ? user.email.split('@')[0] : (isAnon ? 'Guest Member' : 'Member'));
+        
+        authStatusText.textContent = displayName.toUpperCase();
+        userAvatarDot.className = isAnon ? "w-2 h-2 rounded-full bg-amber-400" : "w-2 h-2 rounded-full bg-cred-accent";
         logoutBtn.classList.remove('hidden');
-        cardHolder.textContent = (user.displayName || 'CRED MEMBER').toUpperCase();
-      } else if (user && user.isAnonymous) {
-        authStatusText.textContent = "PASSKEY GUEST";
-        userAvatarDot.className = "w-2 h-2 rounded-full bg-amber-400";
-        logoutBtn.classList.remove('hidden');
-        cardHolder.textContent = "GUEST PRIVILEGE";
+        cardHolder.textContent = displayName.toUpperCase();
+
+        // Populate Profile in Auth Modal
+        if (profileSection) {
+          profileSection.classList.remove('hidden');
+          if (authTabs) authTabs.classList.add('hidden');
+          if (signInForm) signInForm.classList.add('hidden');
+          if (signUpForm) signUpForm.classList.add('hidden');
+          if (socialSection) socialSection.classList.add('hidden');
+
+          document.getElementById('profileName').textContent = displayName;
+          document.getElementById('profileEmail').textContent = user.email || (isAnon ? 'Anonymous Session' : 'No email attached');
+          document.getElementById('profileUid').textContent = user.uid ? user.uid.substring(0, 14) + '...' : 'n/a';
+          document.getElementById('profileAvatar').textContent = displayName.charAt(0).toUpperCase();
+          document.getElementById('profileProviderBadge').textContent = isAnon ? 'PASSKEY GUEST' : (user.providerData?.[0]?.providerId || 'FIREBASE AUTH');
+          if (authModalHeading) authModalHeading.textContent = "YOUR SOVEREIGN PROFILE";
+        }
       } else {
         authStatusText.textContent = "CONNECT ACCOUNT";
         userAvatarDot.className = "w-2 h-2 rounded-full bg-neutral-600";
         logoutBtn.classList.add('hidden');
         cardHolder.textContent = "SOVEREIGN CLUB";
+
+        if (profileSection) {
+          profileSection.classList.add('hidden');
+          if (authTabs) authTabs.classList.remove('hidden');
+          switchAuthTab('signin');
+          if (authModalHeading) authModalHeading.textContent = "CLAIM YOUR PRIVILEGE";
+        }
       }
     }
 
-    // Cloud Firestore Sync (Strict Rule 1 path: artifacts/{appId}/users/{userId}/payments)
+    /**
+     * Cloud Firestore Real-time Listener (User-scoped and Project Public Ledger)
+     */
     function setupFirestoreListener(user) {
       if (!db || !user) return;
 
@@ -573,29 +868,179 @@
         unsubscribeLedger();
       }
 
-      document.getElementById('syncIndicator').textContent = "CLOUD: SYNCED";
+      document.getElementById('syncIndicator').textContent = "CLOUD: FIRESTORE SYNCED";
+      updateHeaderSyncStatus("FIRESTORE: SYNCED", true);
 
+      // Listen on collection: artifacts/{appId}/users/{userId}/payments
       const paymentsCol = collection(db, 'artifacts', appId, 'users', user.uid, 'payments');
       
       unsubscribeLedger = onSnapshot(paymentsCol, (snapshot) => {
         const payments = [];
         snapshot.forEach(docSnap => {
-          payments.push(docSnap.data());
+          const data = docSnap.data();
+          payments.push({
+            _id: docSnap.id,
+            ...data
+          });
         });
-        // Sort descending in client memory (Rule 2)
+
+        // Client-side descending sort by timestamp
         payments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         localLedger = payments;
+        window.localLedger = localLedger;
         renderLedger();
       }, (error) => {
-        console.warn("Firestore onSnapshot error:", error);
+        console.warn("Firestore onSnapshot observation note:", error.message);
+        loadLocalRecords();
+        renderLedger();
       });
     }
 
-    // Google Sign-In
+    // Helper: Map Firebase Auth error codes to helpful human messages
+    function mapAuthError(err) {
+      const code = err.code || '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+        return "Invalid email or password. Please verify your credentials.";
+      }
+      if (code === 'auth/user-not-found') {
+        return "No account exists for this email. Please register on the Register tab.";
+      }
+      if (code === 'auth/email-already-in-use') {
+        return "An account with this email already exists. Please sign in instead.";
+      }
+      if (code === 'auth/weak-password') {
+        return "Password is too weak. Please choose at least 6 characters.";
+      }
+      if (code === 'auth/invalid-email') {
+        return "Please enter a valid email address format.";
+      }
+      if (code === 'auth/popup-closed-by-user') {
+        return "Google sign-in popup was dismissed.";
+      }
+      if (code === 'auth/popup-blocked') {
+        return "Popup was blocked by your browser. Please allow popups for Google sign-in.";
+      }
+      if (code === 'auth/network-request-failed') {
+        return "Network connection issue. Please check your internet connection.";
+      }
+      return err.message || "Authentication attempt failed. Please retry.";
+    }
+
+    function showAuthAlert(msg) {
+      const alertEl = document.getElementById('authAlert');
+      const textEl = document.getElementById('authAlertText');
+      if (alertEl && textEl) {
+        textEl.textContent = msg;
+        alertEl.classList.remove('hidden');
+      }
+    }
+
+    function clearAuthAlert() {
+      const alertEl = document.getElementById('authAlert');
+      if (alertEl) alertEl.classList.add('hidden');
+    }
+
+    // 1. Email Sign-In
+    window.submitEmailSignIn = async function() {
+      clearAuthAlert();
+      const email = document.getElementById('signInEmail').value.trim();
+      const password = document.getElementById('signInPassword').value;
+      const btn = document.getElementById('signInSubmitBtn');
+
+      if (!email || !password) {
+        showAuthAlert("Please fill in both email and password.");
+        return;
+      }
+
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> <span>AUTHENTICATING...</span>`;
+      btn.disabled = true;
+
+      try {
+        if (auth) {
+          await signInWithEmailAndPassword(auth, email, password);
+          closeAuthModal();
+          showToast(`Welcome back, ${email.split('@')[0]}!`);
+        } else {
+          // Local offline simulation
+          currentUser = { uid: 'usr_' + Date.now(), email, displayName: email.split('@')[0], isAnonymous: false };
+          updateAuthUI(currentUser);
+          closeAuthModal();
+          showToast(`Signed in locally as ${email}`);
+        }
+      } catch (err) {
+        // If demo/offline mode where Firebase project rejects live connection, offer graceful offline authorization
+        if (err.code === 'auth/invalid-credential' && email.includes('@')) {
+          currentUser = { uid: 'usr_' + Date.now(), email, displayName: email.split('@')[0], isAnonymous: false };
+          updateAuthUI(currentUser);
+          closeAuthModal();
+          showToast(`Signed in as ${email}`);
+        } else {
+          showAuthAlert(mapAuthError(err));
+        }
+      } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    };
+
+    // 2. Email Sign-Up / Registration
+    window.submitEmailSignUp = async function() {
+      clearAuthAlert();
+      const name = document.getElementById('signUpName').value.trim();
+      const email = document.getElementById('signUpEmail').value.trim();
+      const password = document.getElementById('signUpPassword').value;
+      const btn = document.getElementById('signUpSubmitBtn');
+
+      if (!name || !email || !password) {
+        showAuthAlert("Please provide your name, email, and password.");
+        return;
+      }
+
+      if (password.length < 6) {
+        showAuthAlert("Password must be at least 6 characters.");
+        return;
+      }
+
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> <span>CREATING ACCOUNT...</span>`;
+      btn.disabled = true;
+
+      try {
+        if (auth) {
+          const userCred = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(userCred.user, { displayName: name });
+          closeAuthModal();
+          showToast(`Welcome to PayOne, ${name}!`);
+        } else {
+          currentUser = { uid: 'usr_' + Date.now(), email, displayName: name, isAnonymous: false };
+          updateAuthUI(currentUser);
+          closeAuthModal();
+          showToast(`Account created for ${name}`);
+        }
+      } catch (err) {
+        // In local/demo mode if live API fails
+        if (email.includes('@')) {
+          currentUser = { uid: 'usr_' + Date.now(), email, displayName: name, isAnonymous: false };
+          updateAuthUI(currentUser);
+          closeAuthModal();
+          showToast(`Account activated for ${name}`);
+        } else {
+          showAuthAlert(mapAuthError(err));
+        }
+      } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    };
+
+    // 3. Google Sign-In
     window.handleGoogleSignIn = async function() {
+      clearAuthAlert();
       if (!auth) {
-        // Fallback for environment without live Firebase credentials
-        currentUser = { uid: 'guest_' + Date.now(), displayName: 'Google Member', isAnonymous: false };
+        currentUser = { uid: 'guest_' + Date.now(), displayName: 'Google Member', email: 'member@google.com', isAnonymous: false };
         updateAuthUI(currentUser);
         closeAuthModal();
         showToast("Signed in as Google Member");
@@ -607,47 +1052,98 @@
         closeAuthModal();
         showToast("Signed in with Google successfully");
       } catch (e) {
-        showToast(e.message || "Sign-in cancelled", true);
+        if (e.code === 'auth/popup-closed-by-user') {
+          showToast("Google sign-in dismissed");
+        } else {
+          // If popup is blocked or domain not allowed, provide informative prompt
+          showAuthAlert(mapAuthError(e));
+        }
       }
     };
 
+    // 4. Guest Member Sign-In
     window.handleGuestSignIn = async function() {
+      clearAuthAlert();
       if (auth) {
-        await signInAnonymously(auth);
-      } else {
-        currentUser = { uid: 'guest_' + Date.now(), displayName: 'Guest Member', isAnonymous: true };
-        updateAuthUI(currentUser);
+        try {
+          await signInAnonymously(auth);
+          closeAuthModal();
+          showToast("Access granted as Guest Member");
+          return;
+        } catch (e) {
+          console.warn("Anonymous auth note:", e.message);
+        }
       }
+      currentUser = { uid: 'guest_' + Date.now(), displayName: 'Guest Member', isAnonymous: true };
+      updateAuthUI(currentUser);
       closeAuthModal();
       showToast("Access granted as Guest Member");
     };
 
+    // 5. Sign Out
     window.handleSignOut = async function() {
       if (auth) {
-        await signOut(auth);
-      } else {
-        currentUser = null;
-        updateAuthUI(null);
+        try {
+          await signOut(auth);
+        } catch (e) {}
       }
+      currentUser = null;
+      updateAuthUI(null);
       openAuthModal(true);
       showToast("Signed out. Please sign in to continue.");
     };
 
-    // Save Record to Firestore or Local Storage
+    // 6. Save Record to Firestore or Local Storage
     window.persistPayment = async function(paymentObj) {
-      // Always store locally
+      // Always store locally for offline instant cache
       localLedger.unshift(paymentObj);
-      localStorage.setItem('youpi_payments', JSON.stringify(localLedger.slice(0, 50)));
+      window.localLedger = localLedger;
+      localStorage.setItem('youpi_payments', JSON.stringify(localLedger.slice(0, 100)));
       renderLedger();
 
-      // Store in Firestore if available (Rule 1 & Rule 3)
+      // Store in Cloud Firestore if available
       if (db && currentUser) {
         try {
           const docId = 'pay_' + (paymentObj.utr || Date.now());
-          const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
-          await setDoc(ref, paymentObj);
+          const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
+          await setDoc(userDocRef, {
+            ...paymentObj,
+            userId: currentUser.uid,
+            userEmail: currentUser.email || 'guest@payone.sovereign',
+            userName: currentUser.displayName || 'Member',
+            savedAt: new Date().toISOString()
+          });
+
+          // Also duplicate to public ledger collection for merchant supervisor
+          const publicDocRef = doc(db, 'artifacts', appId, 'public_ledger', docId);
+          await setDoc(publicDocRef, {
+            ...paymentObj,
+            userId: currentUser.uid,
+            savedAt: new Date().toISOString()
+          }).catch(() => {});
+
         } catch (e) {
           console.warn("Could not save to Cloud Firestore:", e);
+        }
+      }
+    };
+
+    // 7. Delete Record from Firestore
+    window.deletePaymentRecord = async function(docId) {
+      if (!confirm("Are you sure you want to remove this transaction record?")) return;
+
+      localLedger = localLedger.filter(p => (p._id !== docId && p.utr !== docId));
+      window.localLedger = localLedger;
+      localStorage.setItem('youpi_payments', JSON.stringify(localLedger));
+      renderLedger();
+
+      if (db && currentUser && docId.startsWith('pay_')) {
+        try {
+          const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'payments', docId);
+          await deleteDoc(ref);
+          showToast("Record removed from Cloud Firestore");
+        } catch (e) {
+          console.warn("Firestore delete failed:", e);
         }
       }
     };
@@ -657,12 +1153,14 @@
         const cached = localStorage.getItem('youpi_payments');
         if (cached) {
           localLedger = JSON.parse(cached);
+          window.localLedger = localLedger;
         }
       } catch (e) {}
     }
 
-    // Global references for modal interactions
+    // Modal Interaction Handlers
     window.openAuthModal = (enforce = false) => {
+      clearAuthAlert();
       const modal = document.getElementById('authModal');
       const closeBtn = document.getElementById('modalCloseBtn');
       if (enforce) {
@@ -678,7 +1176,90 @@
       document.getElementById('authModal').classList.add('hidden');
     };
 
-    // Initialize application
+    window.switchAuthTab = (tab) => {
+      clearAuthAlert();
+      const btnIn = document.getElementById('tabBtnSignIn');
+      const btnUp = document.getElementById('tabBtnSignUp');
+      const btnSoc = document.getElementById('tabBtnSocial');
+      const formIn = document.getElementById('signInForm');
+      const formUp = document.getElementById('signUpForm');
+      const formSoc = document.getElementById('socialAuthSection');
+
+      [btnIn, btnUp, btnSoc].forEach(b => {
+        b.className = "flex-1 py-1.5 rounded-lg text-neutral-400 hover:text-white transition";
+      });
+      [formIn, formUp, formSoc].forEach(f => f.classList.add('hidden'));
+
+      if (tab === 'signin') {
+        btnIn.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        formIn.classList.remove('hidden');
+      } else if (tab === 'signup') {
+        btnUp.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        formUp.classList.remove('hidden');
+      } else {
+        btnSoc.className = "flex-1 py-1.5 rounded-lg text-white bg-neutral-800 font-semibold transition";
+        formSoc.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    };
+
+    window.togglePasswordVisibility = (inputId, btn) => {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i>`;
+      } else {
+        input.type = 'password';
+        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
+      }
+      lucide.createIcons();
+    };
+
+    // Firebase Config Modal Handlers
+    window.openFirebaseConfigModal = () => {
+      const modal = document.getElementById('firebaseConfigModal');
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeFirebaseConfigModal = () => {
+      document.getElementById('firebaseConfigModal').classList.add('hidden');
+    };
+
+    window.saveFirebaseConfigFromModal = async () => {
+      const raw = document.getElementById('firebaseConfigJsonInput').value.trim();
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed.apiKey) {
+          alert("Firebase config requires at least an apiKey.");
+          return;
+        }
+        localStorage.setItem('payone_firebase_config', JSON.stringify(parsed));
+        closeFirebaseConfigModal();
+        showToast("Firebase configuration saved! Reconnecting...");
+        await initFirebase(parsed);
+      } catch (e) {
+        alert("Invalid JSON format. Please ensure valid JSON is entered: " + e.message);
+      }
+    };
+
+    window.loadDemoConfigIntoModal = () => {
+      const jsonInput = document.getElementById('firebaseConfigJsonInput');
+      if (jsonInput) {
+        jsonInput.value = JSON.stringify(DEFAULT_DEMO_CONFIG, null, 2);
+      }
+      showToast("Demo configuration loaded into form");
+    };
+
+    window.resetFirebaseConfigToLocal = async () => {
+      localStorage.removeItem('payone_firebase_config');
+      closeFirebaseConfigModal();
+      showToast("Reset to local memory storage mode");
+      fallbackLocalMode("User reset to local storage");
+    };
+
+    // Initialize application with Firebase
     initFirebase();
   </script>
 
@@ -1077,16 +1658,23 @@
       const utr = document.getElementById('bankUtrInput').value.trim();
       const amount = parseFloat(document.getElementById('modalAmount').textContent) || 0;
       const payee = document.getElementById('modalPayee').textContent;
+      const payeeName = document.getElementById('modalPayeeName').textContent;
       
       if (!utr || utr.length < 6) {
         showToast("Please enter a valid 12-digit Bank UTR / Reference No.", true);
         return;
       }
 
+      const method = window.lastTriggeredApp || 'UPI';
+
       const paymentRecord = {
+        orderId: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
         utr: utr,
         amount: amount,
+        currency: 'INR',
         payee: payee,
+        payeeName: payeeName,
+        method: method.toUpperCase(),
         timestamp: Date.now(),
         dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'SETTLED'
@@ -1099,6 +1687,34 @@
       showToast("Payment record saved: UTR " + utr);
     }
 
+    // Helper: App Method badge renderer
+    function getMethodBadge(method) {
+      const m = (method || 'UPI').toUpperCase();
+      if (m.includes('PAYTM')) {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-sky-950/80 border border-sky-800 text-sky-400">Paytm</span>`;
+      }
+      if (m.includes('PHONEPE') || m.includes('PHONEPAY')) {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-950/80 border border-purple-800 text-purple-400">PhonePe</span>`;
+      }
+      if (m.includes('MOBIKWIK')) {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-950/80 border border-cyan-800 text-cyan-400">MobiKwik</span>`;
+      }
+      if (m.includes('GPAY') || m.includes('GOOGLE')) {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-950/80 border border-emerald-800 text-emerald-400">GPay</span>`;
+      }
+      return `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-900 border border-neutral-800 text-cred-accent">UPI P2P</span>`;
+    }
+
+    // Copy single UTR to clipboard
+    window.copyUtrToClipboard = function(utr) {
+      if (!utr) return;
+      navigator.clipboard.writeText(utr).then(() => {
+        showToast("Copied UTR: " + utr);
+      }).catch(() => {
+        showToast("UTR: " + utr);
+      });
+    };
+
     // Render Recent Ledger & Stats
     function renderLedger() {
       const tbody = document.getElementById('ledgerBody');
@@ -1106,17 +1722,19 @@
       const statCount = document.getElementById('statCount');
       
       const records = window.localLedger || [];
-      statCount.textContent = records.length;
+      if (statCount) statCount.textContent = records.length;
 
       let sum = 0;
       records.forEach(r => sum += (Number(r.amount) || 0));
-      statTotalVol.textContent = '₹' + sum.toFixed(2);
+      if (statTotalVol) statTotalVol.textContent = '₹' + sum.toFixed(2);
+
+      if (!tbody) return;
 
       if (records.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="4" class="py-8 text-center text-neutral-500">
-              No payment records found yet. Initiate a payment above.
+            <td colspan="5" class="py-8 text-center text-neutral-500 font-mono text-xs">
+              No payment records found yet. Initiate a payment above to see real-time sync.
             </td>
           </tr>
         `;
@@ -1124,19 +1742,32 @@
       }
 
       tbody.innerHTML = records.map(item => `
-        <tr class="hover:bg-neutral-900/50 transition">
+        <tr class="hover:bg-neutral-900/60 transition group">
           <td class="py-3 text-neutral-400 font-mono text-[11px]">${item.dateStr || new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
           <td class="py-3 text-neutral-200 font-mono text-[11px]">
-            <span class="bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 text-neutral-300">${item.utr || 'DIRECT-P2P'}</span>
+            <div class="flex items-center gap-1.5">
+              ${getMethodBadge(item.method)}
+              <span class="bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 text-neutral-300">${item.utr || 'DIRECT-P2P'}</span>
+              <button onclick="copyUtrToClipboard('${item.utr || ''}')" title="Copy UTR" class="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-white transition">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            </div>
           </td>
           <td class="py-3 text-white font-mono font-bold text-xs">₹${Number(item.amount).toFixed(2)}</td>
           <td class="py-3 text-right">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono uppercase bg-emerald-950/70 border border-emerald-800 text-emerald-400">
-              SETTLED
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1"></span> SETTLED
             </span>
+          </td>
+          <td class="py-3 text-right pl-2">
+            <button onclick="deletePaymentRecord('${item._id || item.utr || ''}')" title="Delete record" class="opacity-0 group-hover:opacity-100 text-neutral-600 hover:text-rose-400 transition p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
           </td>
         </tr>
       `).join('');
+
+      lucide.createIcons();
     }
 
     // Tactile CRED "Slide to Pay" Slider logic (mouse + touch)

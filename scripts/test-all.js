@@ -8,6 +8,7 @@ const testFiles = [
   'packages/db/src/__tests__/customer-reset.test.js',
   'packages/db/src/__tests__/auth-matrix.test.js',
   'packages/db/src/__tests__/db.test.js',
+  'packages/db/src/__tests__/firestore.test.js',
   'packages/db/src/__tests__/schema-parity.test.js',
   'packages/core/src/__tests__/core.test.js',
   'packages/core/src/__tests__/stand-generator.test.js',
